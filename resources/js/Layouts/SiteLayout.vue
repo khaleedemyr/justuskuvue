@@ -54,7 +54,7 @@ function brandHref(brand) {
         <header v-if="showHeader" class="sticky top-0 z-30">
             <nav class="border-b border-white/20 bg-black/45 backdrop-blur-md">
                 <div class="relative mx-auto w-full max-w-7xl">
-                    <div class="flex w-full items-center justify-center gap-x-4 overflow-x-auto whitespace-nowrap px-4 py-4 text-sm tracking-wide sm:gap-x-5 sm:text-base md:gap-x-6 md:text-lg">
+                    <div class="flex w-full items-center justify-start gap-x-4 overflow-x-auto whitespace-nowrap px-4 py-4 text-sm tracking-wide [touch-action:pan-x] sm:justify-center sm:gap-x-5 sm:text-base md:gap-x-6 md:text-lg">
                         <template v-for="(item, idx) in navItems" :key="item">
                             <div v-if="String(item).trim().toUpperCase().includes('BRAND')" class="group">
                                 <Link href="/brands" class="text-white/90 transition hover:text-white">{{ translatedNavItems[idx] }}</Link>
