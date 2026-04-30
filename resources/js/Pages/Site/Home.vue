@@ -164,7 +164,7 @@ onBeforeUnmount(() => {
 
 <template>
     <SiteLayout title="Home" :show-header="false">
-        <main class="w-full bg-black text-white">
+        <main class="w-full overflow-x-hidden bg-black text-white">
             <div ref="heroRef" class="relative flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] w-full flex-col overflow-visible bg-black">
                 <video
                     v-if="banner?.image && isVideoBanner()"
@@ -201,8 +201,8 @@ onBeforeUnmount(() => {
                     :class="pinned ? 'fixed inset-x-0 top-0 z-40' : 'absolute inset-x-0 bottom-0 z-30'"
                     class="relative w-full border-y border-white/10 bg-black/75 backdrop-blur-md"
                 >
-                    <div class="mx-auto flex w-full max-w-7xl items-center justify-center gap-4 px-6 py-4">
-                        <nav class="flex flex-wrap items-center justify-center gap-x-4 text-sm tracking-wide text-white/90 sm:gap-x-5 sm:text-base md:gap-x-6 md:text-lg">
+                    <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
+                        <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-xs tracking-wide text-white/90 sm:text-sm md:gap-x-6 md:text-lg">
                             <template v-for="(item, idx) in navItems" :key="item">
                                 <div
                                     v-if="String(item).trim().toUpperCase().includes('BRAND')"
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
                                 </Link>
                             </template>
                         </nav>
-                        <div class="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[10px] sm:text-[11px]">
+                        <div class="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[10px] sm:ml-2 sm:text-[11px]">
                             <button
                                 type="button"
                                 class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
@@ -295,10 +295,10 @@ onBeforeUnmount(() => {
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <h3 v-if="block.title" class="text-3xl font-semibold md:text-4xl">{{ block.title }}</h3>
+                                    <h3 v-if="block.title" class="text-2xl font-semibold leading-tight md:text-4xl">{{ block.title }}</h3>
                                     <p
                                         v-if="block.body"
-                                        class="mt-6 whitespace-pre-wrap text-xl leading-relaxed"
+                                        class="mt-4 whitespace-pre-wrap text-base leading-relaxed sm:mt-5 sm:text-lg md:mt-6 md:text-xl"
                                         :class="block.bg_variant === 'light' ? 'text-[#111118]/90' : 'text-white/90'"
                                     >
                                         {{ block.body }}
