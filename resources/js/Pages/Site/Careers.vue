@@ -30,12 +30,19 @@ const secondaryIsExternal = computed(() =>
     >
         <main class="min-h-[100dvh] bg-[#3f3f43] text-white">
             <section class="relative min-h-[64vh] overflow-hidden border-b border-white/10 md:min-h-[72vh]">
-                <img
-                    v-if="pageData?.hero_image_url"
-                    :src="pageData.hero_image_url"
-                    alt="Careers Hero"
-                    class="absolute inset-0 h-full w-full object-cover"
-                />
+                <template v-if="pageData?.hero_image_url">
+                    <img
+                        :src="pageData.hero_image_url"
+                        alt=""
+                        aria-hidden="true"
+                        class="absolute inset-0 h-full w-full object-cover object-center opacity-45 blur-sm scale-110 md:hidden"
+                    />
+                    <img
+                        :src="pageData.hero_image_url"
+                        alt="Careers Hero"
+                        class="absolute inset-0 h-full w-full object-contain object-center md:object-cover"
+                    />
+                </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />
                 <div class="absolute inset-0 bg-black/45" />
                 <div

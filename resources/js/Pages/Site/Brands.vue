@@ -126,12 +126,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
 <template>
     <SiteLayout title="Brands" :menus="menus" :brand-logos="brandLogos">
         <section class="relative flex min-h-[48vh] items-end overflow-hidden pb-20 pt-28">
-            <img
-                v-if="heroImageUrl"
-                :src="heroImageUrl"
-                alt="Brands Hero"
-                class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
-            />
+            <template v-if="heroImageUrl">
+                <img
+                    :src="heroImageUrl"
+                    alt=""
+                    aria-hidden="true"
+                    class="absolute inset-0 h-full w-full bg-black object-cover object-center opacity-45 blur-sm scale-110 md:hidden"
+                />
+                <img
+                    :src="heroImageUrl"
+                    alt="Brands Hero"
+                    class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                />
+            </template>
             <div v-else class="absolute inset-0 bg-zinc-900" />
             <div class="absolute inset-0 bg-black/50" />
             <div class="relative z-10 mx-auto w-full max-w-7xl px-6">

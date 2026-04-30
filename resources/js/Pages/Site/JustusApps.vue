@@ -40,12 +40,19 @@ function isVideoHero() {
                     playsinline
                     preload="auto"
                 />
-                <img
-                    v-else-if="pageData?.hero_image_url"
-                    :src="pageData.hero_image_url"
-                    class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
-                    alt="Justus Apps Hero"
-                />
+                <template v-else-if="pageData?.hero_image_url">
+                    <img
+                        :src="pageData.hero_image_url"
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center opacity-45 blur-sm scale-110 md:hidden"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        :src="pageData.hero_image_url"
+                        class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                        alt="Justus Apps Hero"
+                    />
+                </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />
                 <div class="pointer-events-none absolute inset-0 bg-black/50" />
                 <div class="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10" />

@@ -23,12 +23,19 @@ const { t } = useSiteI18n();
             <section
                 class="relative flex min-h-[84vh] flex-col items-center overflow-hidden px-6 pb-14 pt-28 md:min-h-[88vh] md:pt-32"
             >
-                <img
-                    v-if="heroImageUrl"
-                    :src="heroImageUrl"
-                    alt=""
-                    class="absolute inset-0 h-full w-full object-cover"
-                />
+                <template v-if="heroImageUrl">
+                    <img
+                        :src="heroImageUrl"
+                        alt=""
+                        aria-hidden="true"
+                        class="absolute inset-0 h-full w-full object-cover object-center opacity-45 blur-sm scale-110 md:hidden"
+                    />
+                    <img
+                        :src="heroImageUrl"
+                        alt=""
+                        class="absolute inset-0 h-full w-full object-contain object-center md:object-cover"
+                    />
+                </template>
                 <div v-else class="absolute inset-0 bg-gradient-to-b from-zinc-700 to-zinc-900" />
                 <div class="absolute inset-0 bg-black/60" />
 
