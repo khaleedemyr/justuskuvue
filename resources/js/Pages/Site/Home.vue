@@ -200,21 +200,28 @@ onBeforeUnmount(() => {
     <SiteLayout title="Home" :show-header="false">
         <main class="w-full overflow-x-hidden bg-black text-white">
             <div ref="heroRef" class="relative flex h-[74svh] min-h-[420px] w-full flex-col overflow-visible bg-black md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh]">
-                <video
-                    v-if="banner?.image && isVideoBanner()"
-                    class="absolute inset-0 h-full w-full bg-black object-cover object-center"
-                    :src="banner.image"
-                    autoplay
-                    muted
-                    loop
-                    playsinline
-                />
-                <img
-                    v-else-if="banner?.image"
-                    :src="banner.image"
-                    :alt="banner?.title || 'Head Banner'"
-                    class="absolute inset-0 h-full w-full bg-black object-cover object-center"
-                />
+                <template v-if="banner?.image && isVideoBanner()">
+                    <video
+                        class="absolute inset-0 h-full w-full bg-black object-contain object-center"
+                        :src="banner.image"
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                    />
+                </template>
+                <template v-else-if="banner?.image">
+                    <img
+                        :src="banner.image"
+                        :alt="banner?.title || 'Head Banner'"
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center opacity-45 blur-sm scale-110"
+                    />
+                    <img
+                        :src="banner.image"
+                        :alt="banner?.title || 'Head Banner'"
+                        class="absolute inset-0 h-full w-full bg-black object-contain object-center"
+                    />
+                </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />
 
                 <div class="pointer-events-none absolute inset-0 bg-black/50" />
