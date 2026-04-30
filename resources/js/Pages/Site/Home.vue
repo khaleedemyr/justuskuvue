@@ -37,6 +37,40 @@ const pairedBlocks = computed(() => {
     return rows;
 });
 
+function isMediaBlock(block) {
+    if (!block) return false;
+    const blockType = String(block.block_type || '').toLowerCase();
+    if (blockType === 'video' || blockType === 'image') return true;
+    return Boolean(block.video_url || block.image || block.image_url);
+}
+
+const mobileAlternatingBlocks = computed(() => {
+    const source = Array.isArray(props.blocks) ? props.blocks : [];
+    if (source.length <= 2) return source;
+
+    const mediaBlocks = source.filter((block) => isMediaBlock(block));
+    const textBlocks = source.filter((block) => !isMediaBlock(block));
+    if (mediaBlocks.length === 0 || textBlocks.length === 0) return source;
+
+    const output = [];
+    let mediaIdx = 0;
+    let textIdx = 0;
+    let pickMedia = isMediaBlock(source[0]);
+
+    while (mediaIdx < mediaBlocks.length || textIdx < textBlocks.length) {
+        if (pickMedia) {
+            if (mediaIdx < mediaBlocks.length) output.push(mediaBlocks[mediaIdx++]);
+            else if (textIdx < textBlocks.length) output.push(textBlocks[textIdx++]);
+        } else {
+            if (textIdx < textBlocks.length) output.push(textBlocks[textIdx++]);
+            else if (mediaIdx < mediaBlocks.length) output.push(mediaBlocks[mediaIdx++]);
+        }
+        pickMedia = !pickMedia;
+    }
+
+    return output;
+});
+
 function menuToHref(label) {
     const key = String(label || '').trim().toUpperCase();
     if (key === 'HOME') return '/';
@@ -264,8 +298,8 @@ onBeforeUnmount(() => {
                     <template v-else>
                         <div
                             v-for="(pair, rowIndex) in pairedBlocks"
-                            :key="`row-${rowIndex}`"
-                            class="home-reveal grid w-full grid-cols-1 gap-0 md:grid-cols-2 md:items-stretch"
+                            :key="`desktop-row-${rowIndex}`"
+                            class="home-reveal hidden w-full gap-0 md:grid md:grid-cols-2 md:items-stretch"
                             data-reveal
                             :style="{ transitionDelay: `${rowIndex * 90}ms` }"
                         >
@@ -274,6 +308,46 @@ onBeforeUnmount(() => {
                                 :key="block.id"
                                 class="min-w-0"
                                 :class="blockArticleClass(block)"
+                            >
+                                <template v-if="block.block_type === 'video'">
+                                    <template v-if="block.video_url">
+                                        <div class="absolute inset-0">
+                                            <video
+                                                class="h-full w-full bg-black object-cover object-center"
+                                                :src="block.video_url"
+                                                autoplay
+                                                muted
+                                                loop
+                                                playsinline
+                                                preload="auto"
+                                            />
+                                        </div>
+                                        <div class="pointer-events-none absolute inset-0 bg-black/10" />
+                                    </template>
+                                    <div v-else class="flex h-full min-h-[360px] items-center justify-center bg-zinc-900 text-sm text-white/50 md:min-h-[520px]">
+                                        {{ t('noVideoUploaded') }}
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <h3 v-if="block.title" class="text-2xl font-semibold leading-tight md:text-4xl">{{ block.title }}</h3>
+                                    <p
+                                        v-if="block.body"
+                                        class="mt-4 whitespace-pre-wrap text-base leading-relaxed sm:mt-5 sm:text-lg md:mt-6 md:text-xl"
+                                        :class="block.bg_variant === 'light' ? 'text-[#111118]/90' : 'text-white/90'"
+                                    >
+                                        {{ block.body }}
+                                    </p>
+                                </template>
+                            </article>
+                        </div>
+                        <div class="flex w-full flex-col md:hidden">
+                            <article
+                                v-for="(block, blockIndex) in mobileAlternatingBlocks"
+                                :key="`mobile-block-${block.id || blockIndex}`"
+                                class="home-reveal min-w-0"
+                                :class="blockArticleClass(block)"
+                                data-reveal
+                                :style="{ transitionDelay: `${blockIndex * 60}ms` }"
                             >
                                 <template v-if="block.block_type === 'video'">
                                     <template v-if="block.video_url">
