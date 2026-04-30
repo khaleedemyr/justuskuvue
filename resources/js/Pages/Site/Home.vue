@@ -199,10 +199,10 @@ onBeforeUnmount(() => {
 <template>
     <SiteLayout title="Home" :show-header="false">
         <main class="w-full overflow-x-hidden bg-black text-white">
-            <div ref="heroRef" class="relative flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] w-full flex-col overflow-visible bg-black">
+            <div ref="heroRef" class="relative flex h-[74svh] min-h-[420px] w-full flex-col overflow-visible bg-black md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh]">
                 <video
                     v-if="banner?.image && isVideoBanner()"
-                    class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                    class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     :src="banner.image"
                     autoplay
                     muted
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
                     v-else-if="banner?.image"
                     :src="banner.image"
                     :alt="banner?.title || 'Head Banner'"
-                    class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                    class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                 />
                 <div v-else class="absolute inset-0 bg-zinc-900" />
 
