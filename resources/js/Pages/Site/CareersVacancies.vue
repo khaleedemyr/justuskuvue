@@ -2,7 +2,8 @@
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
-import { computed, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, nextTick, ref } from 'vue';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
@@ -10,6 +11,11 @@ const props = defineProps({
     scope: { type: String, required: true },
     vacancies: { type: Array, default: () => [] },
 });
+const page = usePage();
+const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
+const recaptchaContainer = ref(null);
+const recaptchaWidgetId = ref(null);
+const recaptchaToken = ref('');
 
 const selectedJob = ref(null);
 const submitting = ref(false);
@@ -50,9 +56,14 @@ function openApply(job) {
     phone.value = '';
     coverLetter.value = '';
     cvFile.value = null;
+    recaptchaToken.value = '';
+    nextTick(() => {
+        renderRecaptcha();
+    });
 }
 
 function closeModal() {
+    resetRecaptcha();
     selectedJob.value = null;
 }
 
@@ -64,6 +75,10 @@ function onCvChange(e) {
 async function onSubmit(e) {
     e.preventDefault();
     if (!selectedJob.value || !cvFile.value) return;
+    if (recaptchaSiteKey.value && !recaptchaToken.value) {
+        errorMsg.value = 'Captcha wajib diverifikasi.';
+        return;
+    }
 
     submitting.value = true;
     errorMsg.value = '';
@@ -76,6 +91,9 @@ async function onSubmit(e) {
     fd.append('phone', phone.value);
     fd.append('cover_letter', coverLetter.value);
     fd.append('cv_file', cvFile.value);
+    if (recaptchaToken.value) {
+        fd.append('recaptcha_token', recaptchaToken.value);
+    }
 
     try {
         const { data } = await axios.post('/careers/apply', fd, {
@@ -97,6 +115,55 @@ async function onSubmit(e) {
     } finally {
         submitting.value = false;
     }
+}
+
+function loadRecaptchaScript() {
+    if (!recaptchaSiteKey.value || typeof window === 'undefined') return;
+    if (window.grecaptcha?.render) return;
+    if (document.querySelector('script[data-recaptcha-script="1"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.setAttribute('data-recaptcha-script', '1');
+    document.head.appendChild(script);
+}
+
+function resetRecaptcha() {
+    if (recaptchaWidgetId.value != null && window.grecaptcha?.reset) {
+        window.grecaptcha.reset(recaptchaWidgetId.value);
+    }
+    recaptchaToken.value = '';
+}
+
+function renderRecaptcha() {
+    if (!recaptchaSiteKey.value) return;
+    loadRecaptchaScript();
+    const tryRender = () => {
+        if (!recaptchaContainer.value || !window.grecaptcha?.render) {
+            setTimeout(tryRender, 200);
+            return;
+        }
+        if (recaptchaWidgetId.value != null) {
+            window.grecaptcha.reset(recaptchaWidgetId.value);
+            recaptchaToken.value = '';
+            return;
+        }
+        recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
+            sitekey: recaptchaSiteKey.value,
+            theme: 'dark',
+            callback: (token) => {
+                recaptchaToken.value = String(token || '').trim();
+            },
+            'expired-callback': () => {
+                recaptchaToken.value = '';
+            },
+            'error-callback': () => {
+                recaptchaToken.value = '';
+            },
+        });
+    };
+    tryRender();
 }
 </script>
 
@@ -219,6 +286,9 @@ async function onSubmit(e) {
                             class="w-full text-sm text-white/90 file:mr-3 file:rounded file:border-0 file:bg-white/15 file:px-3 file:py-2 file:text-white"
                             @change="onCvChange"
                         />
+                        <div v-if="recaptchaSiteKey" class="rounded border border-white/15 bg-black/20 p-2">
+                            <div ref="recaptchaContainer" class="min-h-[78px]" />
+                        </div>
                         <p v-if="errorMsg" class="text-sm text-red-300">{{ errorMsg }}</p>
                         <p v-if="successMsg" class="text-sm text-emerald-300">{{ successMsg }}</p>
                         <button

@@ -56,6 +56,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const channelActionLoading = ref(false);
     const savedReservationNumber = ref(null);
     const acceptedReservationTerms = ref(false);
+    const captchaToken = ref('');
     const message = ref(null);
     const submitError = ref(null);
     const isSubmitting = ref(false);
@@ -308,6 +309,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
         if (!name.value.trim() || !phone.value.trim()) {
             return { ok: false, error: t('reservationFillContactFirst') };
         }
+        if (!captchaToken.value) {
+            return { ok: false, error: 'Captcha verification is required.' };
+        }
         try {
             const response = await createReservation(baseUrl.value, {
                 name: name.value.trim(),
@@ -322,6 +326,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 special_requests: combinedSpecialRequestsForSubmit.value,
                 from_sales: false,
                 status: 'pending',
+                recaptcha_token: captchaToken.value,
             });
 
             if (!response.ok) {
@@ -875,6 +880,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         channelActionLoading,
         savedReservationNumber,
         acceptedReservationTerms,
+        captchaToken,
         message,
         submitError,
         isSubmitting,
@@ -938,6 +944,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
         handleDownloadSuccessQr,
         reservationTermKeys,
         fieldClass,
+        setCaptchaToken(token) {
+            captchaToken.value = String(token || '').trim();
+        },
         baseUrl,
         erpWebBaseUrl,
         handleAdvanceFromStep3Form(e) {

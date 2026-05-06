@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Services\YmsoftErpClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class SitePageController extends Controller
 {
@@ -98,7 +100,14 @@ class SitePageController extends Controller
             'phone' => 'required|string|max:30',
             'cover_letter' => 'nullable|string',
             'cv_file' => 'required|file|mimes:pdf,doc,docx|max:5120',
+            'recaptcha_token' => 'required|string|max:4096',
         ]);
+
+        if (! $this->verifyRecaptcha((string) $data['recaptcha_token'], (string) $request->ip())) {
+            return response()->json([
+                'message' => 'Captcha verification failed. Please try again.',
+            ], 422);
+        }
 
         $result = $this->erp->postJobVacancyApply(
             (int) $data['job_id'],
@@ -120,6 +129,26 @@ class SitePageController extends Controller
         return response()->json([
             'message' => $result['message'] ?? 'Gagal kirim lamaran.',
         ], 422);
+    }
+
+    private function verifyRecaptcha(string $token, string $ip): bool
+    {
+        $secret = (string) config('services.recaptcha.secret_key', '');
+        if ($secret === '' || $token === '') {
+            return false;
+        }
+
+        try {
+            $res = Http::asForm()->timeout(10)->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret' => $secret,
+                'response' => $token,
+                'remoteip' => $ip,
+            ]);
+            $json = $res->json();
+            return (bool) ($json['success'] ?? false);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function careersScope(string $scope): Response

@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
             /** Web origin for /storage/... images (not the proxy prefix). */
             'ymsoftErpWebBaseUrl' => $erp->webBaseUrl(),
             'reservationCallCenterWa' => (string) config('services.ymsofterp.reservation_call_center_wa', ''),
+            'reservationRecaptchaSiteKey' => (string) config('services.recaptcha.site_key', ''),
         ];
     }
 }

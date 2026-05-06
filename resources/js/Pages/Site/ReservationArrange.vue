@@ -1,7 +1,8 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { toRef } from 'vue';
+import { toRef, ref, computed, watch, nextTick, onMounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 import { useReservationArrange } from '@/composables/useReservationArrange';
 import { getTableSeatingCapacity } from '@/lib/reservationHelpers';
@@ -14,6 +15,89 @@ const props = defineProps({
 
 const { t, lang } = useSiteI18n();
 const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
+const page = usePage();
+const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
+const recaptchaContainer = ref(null);
+const recaptchaWidgetId = ref(null);
+const isCaptchaSectionVisible = computed(() =>
+    (form.wizardStep === 4 && form.orderChannel === 'manual') ||
+    (form.wizardStep === 5 && form.orderChannel === 'self')
+);
+
+function loadRecaptchaScript() {
+    if (!recaptchaSiteKey.value || typeof window === 'undefined') return;
+    if (window.grecaptcha?.render) return;
+    if (document.querySelector('script[data-recaptcha-script="1"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.setAttribute('data-recaptcha-script', '1');
+    document.head.appendChild(script);
+}
+
+function renderRecaptcha() {
+    if (!recaptchaSiteKey.value || !isCaptchaSectionVisible.value) return;
+    if (!recaptchaContainer.value || !window.grecaptcha?.render) return;
+    if (recaptchaWidgetId.value != null) {
+        window.grecaptcha.reset(recaptchaWidgetId.value);
+        recaptchaWidgetId.value = null;
+    }
+    form.setCaptchaToken('');
+    recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
+        sitekey: recaptchaSiteKey.value,
+        theme: 'dark',
+        callback: (token) => {
+            form.setCaptchaToken(token);
+        },
+        'expired-callback': () => {
+            form.setCaptchaToken('');
+        },
+        'error-callback': () => {
+            form.setCaptchaToken('');
+        },
+    });
+}
+
+function ensureCaptchaBeforeSubmit() {
+    if (!turnstileSiteKey.value) return true;
+    if (form.captchaToken) return true;
+    form.submitError = lang.value === 'id'
+        ? 'Captcha wajib diverifikasi sebelum kirim reservasi.'
+        : 'Please complete captcha verification before submitting.';
+    return false;
+}
+
+function handleManualSubmitWithCaptcha() {
+    if (!ensureCaptchaBeforeSubmit()) return;
+    form.handleManualSubmitFromSummary();
+}
+
+function handleSelfSubmitWithCaptcha() {
+    if (!ensureCaptchaBeforeSubmit()) return;
+    form.handleSubmitSelfOrder();
+}
+
+onMounted(() => {
+    loadRecaptchaScript();
+});
+
+watch(
+    () => [isCaptchaSectionVisible.value, recaptchaSiteKey.value],
+    async ([visible, key]) => {
+        if (!visible || !key) return;
+        await nextTick();
+        const tryRender = () => {
+            if (window.grecaptcha?.render) {
+                renderRecaptcha();
+                return;
+            }
+            setTimeout(tryRender, 200);
+        };
+        tryRender();
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -1017,11 +1101,17 @@ const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
                                                 }}</span>
                                             </label>
                                         </div>
+                                        <div
+                                            v-if="recaptchaSiteKey"
+                                            class="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+                                        >
+                                            <div ref="recaptchaContainer" class="min-h-[78px]" />
+                                        </div>
                                         <button
                                             type="button"
                                             :disabled="form.isSubmitting || !form.acceptedReservationTerms"
                                             class="mt-8 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 text-sm font-semibold uppercase tracking-widest text-white shadow-lg shadow-emerald-900/35 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click="form.handleManualSubmitFromSummary"
+                                            @click="handleManualSubmitWithCaptcha"
                                         >
                                             {{
                                                 form.isSubmitting
@@ -1403,6 +1493,12 @@ const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
                                                 }}</span>
                                             </label>
                                         </div>
+                                        <div
+                                            v-if="recaptchaSiteKey"
+                                            class="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+                                        >
+                                            <div ref="recaptchaContainer" class="min-h-[78px]" />
+                                        </div>
                                         <button
                                             type="button"
                                             :disabled="
@@ -1411,7 +1507,7 @@ const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
                                                 !form.acceptedReservationTerms
                                             "
                                             class="mt-8 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 py-4 text-sm font-semibold uppercase tracking-widest text-zinc-900 shadow-lg shadow-amber-900/30 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-                                            @click="form.handleSubmitSelfOrder"
+                                            @click="handleSelfSubmitWithCaptcha"
                                         >
                                             {{
                                                 form.isSubmitting
