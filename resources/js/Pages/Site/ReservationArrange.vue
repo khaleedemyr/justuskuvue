@@ -1,7 +1,7 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { toRef, ref, computed, watch, nextTick, onMounted } from 'vue';
+import { toRef, computed, onMounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 import { useReservationArrange } from '@/composables/useReservationArrange';
@@ -17,87 +17,52 @@ const { t, lang } = useSiteI18n();
 const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
 const page = usePage();
 const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
-const recaptchaContainer = ref(null);
-const recaptchaWidgetId = ref(null);
-const isCaptchaSectionVisible = computed(() =>
-    (form.wizardStep === 4 && form.orderChannel === 'manual') ||
-    (form.wizardStep === 5 && form.orderChannel === 'self')
-);
 
 function loadRecaptchaScript() {
     if (!recaptchaSiteKey.value || typeof window === 'undefined') return;
-    if (window.grecaptcha?.render) return;
+    if (window.grecaptcha?.execute) return;
     if (document.querySelector('script[data-recaptcha-script="1"]')) return;
     const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(recaptchaSiteKey.value)}`;
     script.async = true;
     script.defer = true;
     script.setAttribute('data-recaptcha-script', '1');
     document.head.appendChild(script);
 }
 
-function renderRecaptcha() {
-    if (!recaptchaSiteKey.value || !isCaptchaSectionVisible.value) return;
-    if (!recaptchaContainer.value || !window.grecaptcha?.render) return;
-    if (recaptchaWidgetId.value != null) {
-        window.grecaptcha.reset(recaptchaWidgetId.value);
-        recaptchaWidgetId.value = null;
-    }
-    form.setCaptchaToken('');
-    recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
-        sitekey: recaptchaSiteKey.value,
-        theme: 'dark',
-        callback: (token) => {
+async function ensureCaptchaBeforeSubmit(action) {
+    if (!recaptchaSiteKey.value) return true;
+    const getToken = async () => {
+        if (!window.grecaptcha?.execute) return '';
+        return window.grecaptcha.execute(recaptchaSiteKey.value, { action });
+    };
+    for (let i = 0; i < 10; i += 1) {
+        const token = await getToken();
+        if (token) {
             form.setCaptchaToken(token);
-        },
-        'expired-callback': () => {
-            form.setCaptchaToken('');
-        },
-        'error-callback': () => {
-            form.setCaptchaToken('');
-        },
-    });
-}
-
-function ensureCaptchaBeforeSubmit() {
-    if (!turnstileSiteKey.value) return true;
-    if (form.captchaToken) return true;
+            return true;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 150));
+    }
     form.submitError = lang.value === 'id'
-        ? 'Captcha wajib diverifikasi sebelum kirim reservasi.'
-        : 'Please complete captcha verification before submitting.';
+        ? 'Captcha gagal dimuat. Silakan refresh halaman.'
+        : 'Captcha failed to load. Please refresh the page.';
     return false;
 }
 
-function handleManualSubmitWithCaptcha() {
-    if (!ensureCaptchaBeforeSubmit()) return;
+async function handleManualSubmitWithCaptcha() {
+    if (!await ensureCaptchaBeforeSubmit('reservation_submit')) return;
     form.handleManualSubmitFromSummary();
 }
 
-function handleSelfSubmitWithCaptcha() {
-    if (!ensureCaptchaBeforeSubmit()) return;
+async function handleSelfSubmitWithCaptcha() {
+    if (!await ensureCaptchaBeforeSubmit('reservation_submit')) return;
     form.handleSubmitSelfOrder();
 }
 
 onMounted(() => {
     loadRecaptchaScript();
 });
-
-watch(
-    () => [isCaptchaSectionVisible.value, recaptchaSiteKey.value],
-    async ([visible, key]) => {
-        if (!visible || !key) return;
-        await nextTick();
-        const tryRender = () => {
-            if (window.grecaptcha?.render) {
-                renderRecaptcha();
-                return;
-            }
-            setTimeout(tryRender, 200);
-        };
-        tryRender();
-    },
-    { immediate: true },
-);
 </script>
 
 <template>
@@ -1101,12 +1066,6 @@ watch(
                                                 }}</span>
                                             </label>
                                         </div>
-                                        <div
-                                            v-if="recaptchaSiteKey"
-                                            class="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-                                        >
-                                            <div ref="recaptchaContainer" class="min-h-[78px]" />
-                                        </div>
                                         <button
                                             type="button"
                                             :disabled="form.isSubmitting || !form.acceptedReservationTerms"
@@ -1492,12 +1451,6 @@ watch(
                                                     t('reservationTermsCheckbox')
                                                 }}</span>
                                             </label>
-                                        </div>
-                                        <div
-                                            v-if="recaptchaSiteKey"
-                                            class="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-                                        >
-                                            <div ref="recaptchaContainer" class="min-h-[78px]" />
                                         </div>
                                         <button
                                             type="button"

@@ -91,7 +91,7 @@ class ErpSiteProxyController extends Controller
             ], 422);
         }
 
-        if (! $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip())) {
+        if (! $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_submit')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
@@ -154,7 +154,7 @@ class ErpSiteProxyController extends Controller
             ->header('Content-Type', 'application/json');
     }
 
-    private function verifyRecaptcha(string $token, string $ip): bool
+    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): bool
     {
         $secret = (string) config('services.recaptcha.secret_key', '');
         if ($secret === '' || $token === '') {
@@ -168,7 +168,15 @@ class ErpSiteProxyController extends Controller
                 'remoteip' => $ip,
             ]);
             $json = $res->json();
-            return (bool) ($json['success'] ?? false);
+            if (! (bool) ($json['success'] ?? false)) {
+                return false;
+            }
+            $action = (string) ($json['action'] ?? '');
+            $score = (float) ($json['score'] ?? 0);
+            if ($action !== '' && $action !== $expectedAction) {
+                return false;
+            }
+            return $score >= 0.3;
         } catch (Throwable) {
             return false;
         }

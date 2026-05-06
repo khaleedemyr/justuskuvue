@@ -103,7 +103,7 @@ class SitePageController extends Controller
             'recaptcha_token' => 'required|string|max:4096',
         ]);
 
-        if (! $this->verifyRecaptcha((string) $data['recaptcha_token'], (string) $request->ip())) {
+        if (! $this->verifyRecaptcha((string) $data['recaptcha_token'], (string) $request->ip(), 'career_apply')) {
             return response()->json([
                 'message' => 'Captcha verification failed. Please try again.',
             ], 422);
@@ -131,7 +131,7 @@ class SitePageController extends Controller
         ], 422);
     }
 
-    private function verifyRecaptcha(string $token, string $ip): bool
+    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): bool
     {
         $secret = (string) config('services.recaptcha.secret_key', '');
         if ($secret === '' || $token === '') {
@@ -145,7 +145,15 @@ class SitePageController extends Controller
                 'remoteip' => $ip,
             ]);
             $json = $res->json();
-            return (bool) ($json['success'] ?? false);
+            if (! (bool) ($json['success'] ?? false)) {
+                return false;
+            }
+            $action = (string) ($json['action'] ?? '');
+            $score = (float) ($json['score'] ?? 0);
+            if ($action !== '' && $action !== $expectedAction) {
+                return false;
+            }
+            return $score >= 0.3;
         } catch (Throwable) {
             return false;
         }
