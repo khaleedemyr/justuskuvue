@@ -6,6 +6,7 @@ use App\Services\YmsoftErpClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -101,12 +102,39 @@ class SitePageController extends Controller
             'cover_letter' => 'nullable|string',
             'cv_file' => 'required|file|mimes:pdf,doc,docx|max:5120',
             'recaptcha_token' => 'required|string|max:4096',
+            'form_started_at' => 'required|integer',
+            'company_website' => 'nullable|string|max:255',
         ]);
+        if (trim((string) ($data['company_website'] ?? '')) !== '') {
+            Log::warning('Career apply honeypot triggered', ['ip' => $request->ip()]);
+            return response()->json([
+                'message' => 'Permintaan tidak valid.',
+            ], 422);
+        }
+        if ((time() - (int) $data['form_started_at']) < 3) {
+            Log::warning('Career apply too-fast submit', ['ip' => $request->ip()]);
+            return response()->json([
+                'message' => 'Permintaan terlalu cepat.',
+            ], 422);
+        }
 
-        if (! $this->verifyRecaptcha((string) $data['recaptcha_token'], (string) $request->ip(), 'career_apply')) {
+        $captchaStatus = $this->verifyRecaptcha((string) $data['recaptcha_token'], (string) $request->ip(), 'career_apply');
+        Log::info('Career apply captcha evaluated', [
+            'ip' => $request->ip(),
+            'result' => $captchaStatus,
+            'email_hash' => sha1(strtolower(trim((string) $data['email']))),
+        ]);
+        if (! $captchaStatus['ok']) {
             return response()->json([
                 'message' => 'Captcha verification failed. Please try again.',
             ], 422);
+        }
+        if (($captchaStatus['risk_level'] ?? 'low') !== 'low') {
+            Log::warning('Career apply medium-risk captcha pass', [
+                'ip' => $request->ip(),
+                'result' => $captchaStatus,
+                'email_hash' => sha1(strtolower(trim((string) $data['email']))),
+            ]);
         }
 
         $result = $this->erp->postJobVacancyApply(
@@ -131,11 +159,16 @@ class SitePageController extends Controller
         ], 422);
     }
 
-    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): bool
+    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): array
     {
         $secret = (string) config('services.recaptcha.secret_key', '');
+        $hardBlockScore = (float) config('services.recaptcha.hard_block_score', 0.5);
+        $mediumRiskScore = (float) config('services.recaptcha.medium_risk_score', 0.7);
+        if ($mediumRiskScore < $hardBlockScore) {
+            $mediumRiskScore = $hardBlockScore;
+        }
         if ($secret === '' || $token === '') {
-            return false;
+            return ['ok' => false, 'reason' => 'missing_secret_or_token'];
         }
 
         try {
@@ -146,16 +179,22 @@ class SitePageController extends Controller
             ]);
             $json = $res->json();
             if (! (bool) ($json['success'] ?? false)) {
-                return false;
+                return ['ok' => false, 'reason' => 'google_unsuccess', 'error_codes' => $json['error-codes'] ?? []];
             }
             $action = (string) ($json['action'] ?? '');
             $score = (float) ($json['score'] ?? 0);
             if ($action !== '' && $action !== $expectedAction) {
-                return false;
+                return ['ok' => false, 'reason' => 'action_mismatch', 'action' => $action, 'score' => $score];
             }
-            return $score >= 0.3;
+            if ($score < $hardBlockScore) {
+                return ['ok' => false, 'reason' => 'low_score', 'action' => $action, 'score' => $score];
+            }
+            if ($score < $mediumRiskScore) {
+                return ['ok' => true, 'reason' => 'passed_medium_risk', 'action' => $action, 'score' => $score, 'risk_level' => 'medium'];
+            }
+            return ['ok' => true, 'reason' => 'passed', 'action' => $action, 'score' => $score, 'risk_level' => 'low'];
         } catch (Throwable) {
-            return false;
+            return ['ok' => false, 'reason' => 'verify_exception'];
         }
     }
 

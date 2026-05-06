@@ -1065,6 +1065,14 @@ onMounted(() => {
                                                     t('reservationTermsCheckbox')
                                                 }}</span>
                                             </label>
+                                            <input
+                                                v-model="form.honeypot"
+                                                type="text"
+                                                autocomplete="off"
+                                                tabindex="-1"
+                                                class="hidden"
+                                                aria-hidden="true"
+                                            />
                                         </div>
                                         <button
                                             type="button"
@@ -1451,6 +1459,14 @@ onMounted(() => {
                                                     t('reservationTermsCheckbox')
                                                 }}</span>
                                             </label>
+                                            <input
+                                                v-model="form.honeypot"
+                                                type="text"
+                                                autocomplete="off"
+                                                tabindex="-1"
+                                                class="hidden"
+                                                aria-hidden="true"
+                                            />
                                         </div>
                                         <button
                                             type="button"

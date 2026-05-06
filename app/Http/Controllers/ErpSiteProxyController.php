@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Throwable;
 
@@ -30,7 +31,17 @@ class ErpSiteProxyController extends Controller
         $validated = $request->validate([
             'reservation_number' => 'required|string|max:80',
             'recaptcha_token' => 'required|string|max:4096',
+            'form_started_at' => 'required|integer',
+            'company_website' => 'nullable|string|max:255',
         ]);
+        if (trim((string) ($validated['company_website'] ?? '')) !== '') {
+            Log::warning('Reservation status honeypot triggered', ['ip' => $request->ip()]);
+            return response()->json(['message' => 'Permintaan tidak valid.'], 422);
+        }
+        if ((time() - (int) $validated['form_started_at']) < 2) {
+            Log::warning('Reservation status too-fast submit', ['ip' => $request->ip()]);
+            return response()->json(['message' => 'Permintaan terlalu cepat.'], 422);
+        }
 
         $ipKey = 'reservation-status:ip:'.$request->ip();
         $numberKey = 'reservation-status:number:'.strtolower(trim((string) $validated['reservation_number']));
@@ -40,10 +51,23 @@ class ErpSiteProxyController extends Controller
             ], 429);
         }
 
-        if (! $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_status_lookup')) {
+        $captchaStatus = $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_status_lookup');
+        Log::info('Reservation status captcha evaluated', [
+            'ip' => $request->ip(),
+            'result' => $captchaStatus,
+            'reservation_hash' => sha1(strtolower(trim((string) $validated['reservation_number']))),
+        ]);
+        if (! $captchaStatus['ok']) {
             return response()->json([
                 'message' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
             ], 422);
+        }
+        if (($captchaStatus['risk_level'] ?? 'low') !== 'low') {
+            Log::warning('Reservation status medium-risk captcha pass', [
+                'ip' => $request->ip(),
+                'result' => $captchaStatus,
+                'reservation_hash' => sha1(strtolower(trim((string) $validated['reservation_number']))),
+            ]);
         }
 
         RateLimiter::hit($ipKey, 300);
@@ -52,7 +76,7 @@ class ErpSiteProxyController extends Controller
         $query = [
             'reservation_number' => (string) $validated['reservation_number'],
         ];
-        return $this->forwardJsonGet('reservations/status-by-number', new Request($query));
+        return $this->forwardJsonGet('reservations/status-by-number', $request, $query);
     }
 
     public function selfOrderMenu(Request $request): Response
@@ -75,6 +99,8 @@ class ErpSiteProxyController extends Controller
             'selected_table_ids' => 'required|array|min:1',
             'selected_table_ids.*' => 'integer|min:1',
             'recaptcha_token' => 'required|string|max:4096',
+            'form_started_at' => 'required|integer',
+            'company_website' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -86,6 +112,20 @@ class ErpSiteProxyController extends Controller
         }
 
         $validated = $validator->validated();
+        if (trim((string) ($validated['company_website'] ?? '')) !== '') {
+            Log::warning('Reservation honeypot triggered', ['ip' => $request->ip()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Permintaan tidak valid.',
+            ], 422);
+        }
+        if ((time() - (int) $validated['form_started_at']) < 3) {
+            Log::warning('Reservation too-fast submit', ['ip' => $request->ip()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Permintaan terlalu cepat.',
+            ], 422);
+        }
 
         $ipKey = 'reservation:ip:'.$request->ip();
         $contactKey = 'reservation:contact:'.strtolower(trim((string) ($validated['email'] ?? $validated['phone'])));
@@ -116,17 +156,31 @@ class ErpSiteProxyController extends Controller
             ], 422);
         }
 
-        if (! $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_submit')) {
+        $captchaStatus = $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_submit');
+        Log::info('Reservation captcha evaluated', [
+            'ip' => $request->ip(),
+            'result' => $captchaStatus,
+            'contact_hash' => sha1(strtolower(trim((string) ($validated['email'] ?? $validated['phone'])))),
+        ]);
+        if (! $captchaStatus['ok']) {
             return response()->json([
                 'success' => false,
                 'message' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
             ], 422);
+        }
+        if (($captchaStatus['risk_level'] ?? 'low') !== 'low') {
+            Log::warning('Reservation medium-risk captcha pass', [
+                'ip' => $request->ip(),
+                'result' => $captchaStatus,
+                'contact_hash' => sha1(strtolower(trim((string) ($validated['email'] ?? $validated['phone'])))),
+            ]);
         }
 
         RateLimiter::hit($ipKey, 300);
         RateLimiter::hit($contactKey, 300);
 
         unset($payload['recaptcha_token']);
+        unset($payload['company_website'], $payload['form_started_at']);
         return $this->forwardJsonPost('reservations', $request, $payload);
     }
 
@@ -135,13 +189,14 @@ class ErpSiteProxyController extends Controller
         return $this->forwardJsonPost('self-order/checkout', $request);
     }
 
-    private function forwardJsonGet(string $path, Request $request): Response
+    private function forwardJsonGet(string $path, Request $request, ?array $overrideQuery = null): Response
     {
         $url = $this->erp->apiBaseUrl().'/'.ltrim($path, '/');
         try {
+            $query = $overrideQuery ?? $request->query();
             $response = Http::timeout(30)
                 ->acceptJson()
-                ->get($url, $request->query());
+                ->get($url, $query);
         } catch (Throwable) {
             return response()->json([
                 'message' => 'ERP tidak dapat dijangkau dari server. Periksa YMSOFTERP_API_URL dan koneksi jaringan.',
@@ -179,11 +234,16 @@ class ErpSiteProxyController extends Controller
             ->header('Content-Type', 'application/json');
     }
 
-    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): bool
+    private function verifyRecaptcha(string $token, string $ip, string $expectedAction): array
     {
         $secret = (string) config('services.recaptcha.secret_key', '');
+        $hardBlockScore = (float) config('services.recaptcha.hard_block_score', 0.5);
+        $mediumRiskScore = (float) config('services.recaptcha.medium_risk_score', 0.7);
+        if ($mediumRiskScore < $hardBlockScore) {
+            $mediumRiskScore = $hardBlockScore;
+        }
         if ($secret === '' || $token === '') {
-            return false;
+            return ['ok' => false, 'reason' => 'missing_secret_or_token'];
         }
 
         try {
@@ -194,16 +254,22 @@ class ErpSiteProxyController extends Controller
             ]);
             $json = $res->json();
             if (! (bool) ($json['success'] ?? false)) {
-                return false;
+                return ['ok' => false, 'reason' => 'google_unsuccess', 'error_codes' => $json['error-codes'] ?? []];
             }
             $action = (string) ($json['action'] ?? '');
             $score = (float) ($json['score'] ?? 0);
             if ($action !== '' && $action !== $expectedAction) {
-                return false;
+                return ['ok' => false, 'reason' => 'action_mismatch', 'action' => $action, 'score' => $score];
             }
-            return $score >= 0.3;
+            if ($score < $hardBlockScore) {
+                return ['ok' => false, 'reason' => 'low_score', 'action' => $action, 'score' => $score];
+            }
+            if ($score < $mediumRiskScore) {
+                return ['ok' => true, 'reason' => 'passed_medium_risk', 'action' => $action, 'score' => $score, 'risk_level' => 'medium'];
+            }
+            return ['ok' => true, 'reason' => 'passed', 'action' => $action, 'score' => $score, 'risk_level' => 'low'];
         } catch (Throwable) {
-            return false;
+            return ['ok' => false, 'reason' => 'verify_exception'];
         }
     }
 }

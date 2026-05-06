@@ -57,6 +57,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const savedReservationNumber = ref(null);
     const acceptedReservationTerms = ref(false);
     const captchaToken = ref('');
+    const formStartedAt = ref(Math.floor(Date.now() / 1000));
+    const honeypot = ref('');
     const message = ref(null);
     const submitError = ref(null);
     const isSubmitting = ref(false);
@@ -235,6 +237,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
         savedReservationNumber.value = null;
         acceptedReservationTerms.value = false;
         successInfo.value = null;
+        honeypot.value = '';
+        formStartedAt.value = Math.floor(Date.now() / 1000);
     }
 
     function resetAvailabilityState(opts) {
@@ -327,6 +331,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 from_sales: false,
                 status: 'pending',
                 recaptcha_token: captchaToken.value,
+                form_started_at: formStartedAt.value,
+                company_website: honeypot.value,
             });
 
             if (!response.ok) {
@@ -881,6 +887,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
         savedReservationNumber,
         acceptedReservationTerms,
         captchaToken,
+        formStartedAt,
+        honeypot,
         message,
         submitError,
         isSubmitting,

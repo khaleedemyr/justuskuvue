@@ -18,6 +18,8 @@ const reservationNumber = ref('');
 const loading = ref(false);
 const error = ref(null);
 const result = ref(null);
+const formStartedAt = ref(Math.floor(Date.now() / 1000));
+const honeypot = ref('');
 
 const baseUrl = computed(() => String(page.props.ymsoftErpApiBaseUrl || '').replace(/\/$/, ''));
 
@@ -55,7 +57,7 @@ async function handleCheckStatus() {
                     : 'Captcha failed to load. Please refresh the page.';
             return;
         }
-        const res = await fetchReservationStatusByNumber(baseUrl.value, normalized, token);
+        const res = await fetchReservationStatusByNumber(baseUrl.value, normalized, token, formStartedAt.value, honeypot.value);
         if (!res.ok) {
             const msg = (res.message || '').toLowerCase();
             error.value =
@@ -140,6 +142,14 @@ async function executeRecaptcha(action) {
                         {{ loading ? t('reservationWorkingShort') : t('reservationStatusLookupButton') }}
                     </button>
                 </div>
+                <input
+                    v-model="honeypot"
+                    type="text"
+                    autocomplete="off"
+                    tabindex="-1"
+                    class="hidden"
+                    aria-hidden="true"
+                />
 
                 <p
                     v-if="error"

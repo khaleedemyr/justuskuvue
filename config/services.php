@@ -45,6 +45,11 @@ return [
         // Default uses Google reCAPTCHA test keys; replace in .env for production.
         'site_key' => env('RECAPTCHA_SITE_KEY', '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'),
         'secret_key' => env('RECAPTCHA_SECRET_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'),
+        // Adaptive threshold:
+        // - score < hard_block_score => block
+        // - hard_block_score <= score < medium_risk_score => allow but mark as medium risk
+        'hard_block_score' => (float) env('RECAPTCHA_HARD_BLOCK_SCORE', 0.5),
+        'medium_risk_score' => (float) env('RECAPTCHA_MEDIUM_RISK_SCORE', 0.7),
     ],
 
 ];

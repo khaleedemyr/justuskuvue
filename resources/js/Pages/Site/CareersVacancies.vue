@@ -14,6 +14,8 @@ const props = defineProps({
 const page = usePage();
 const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
 const recaptchaToken = ref('');
+const formStartedAt = ref(Math.floor(Date.now() / 1000));
+const honeypot = ref('');
 
 const selectedJob = ref(null);
 const submitting = ref(false);
@@ -55,6 +57,8 @@ function openApply(job) {
     coverLetter.value = '';
     cvFile.value = null;
     recaptchaToken.value = '';
+    honeypot.value = '';
+    formStartedAt.value = Math.floor(Date.now() / 1000);
     loadRecaptchaScript();
 }
 
@@ -90,6 +94,8 @@ async function onSubmit(e) {
     if (recaptchaToken.value) {
         fd.append('recaptcha_token', recaptchaToken.value);
     }
+    fd.append('form_started_at', String(formStartedAt.value));
+    fd.append('company_website', honeypot.value || '');
 
     try {
         const { data } = await axios.post('/careers/apply', fd, {
@@ -263,6 +269,14 @@ async function executeRecaptcha(action) {
                             accept=".pdf,.doc,.docx"
                             class="w-full text-sm text-white/90 file:mr-3 file:rounded file:border-0 file:bg-white/15 file:px-3 file:py-2 file:text-white"
                             @change="onCvChange"
+                        />
+                        <input
+                            v-model="honeypot"
+                            type="text"
+                            autocomplete="off"
+                            tabindex="-1"
+                            class="hidden"
+                            aria-hidden="true"
                         />
                         <p v-if="errorMsg" class="text-sm text-red-300">{{ errorMsg }}</p>
                         <p v-if="successMsg" class="text-sm text-emerald-300">{{ successMsg }}</p>
