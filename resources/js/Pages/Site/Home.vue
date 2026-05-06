@@ -436,9 +436,9 @@ onBeforeUnmount(() => {
                             <div
                                 v-for="(page, pageIdx) in promoDesktopPages"
                                 :key="`promo-page-${pageIdx}`"
-                                class="min-w-full shrink-0 px-3 py-2 md:px-6 md:py-3"
+                                class="min-w-full shrink-0 px-1 py-2 md:px-1 md:py-2"
                             >
-                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-3 gap-1 md:gap-1 lg:gap-1.5">
                                     <div
                                         v-for="slide in page"
                                         :key="slide.id"
@@ -454,7 +454,7 @@ onBeforeUnmount(() => {
                                             <img
                                                 :src="slide.image"
                                                 :alt="slide.title || 'Promo'"
-                                                class="block h-auto w-full max-h-[min(34vh,320px)] object-contain object-center lg:max-h-[min(38vh,380px)]"
+                                                class="block h-[min(34vh,320px)] w-full object-cover object-center lg:h-[min(38vh,380px)]"
                                                 loading="lazy"
                                             />
                                         </a>
@@ -462,7 +462,7 @@ onBeforeUnmount(() => {
                                             v-else
                                             :src="slide.image"
                                             :alt="slide.title || 'Promo'"
-                                            class="block h-auto w-full max-h-[min(34vh,320px)] object-contain object-center lg:max-h-[min(38vh,380px)]"
+                                            class="block h-[min(34vh,320px)] w-full object-cover object-center lg:h-[min(38vh,380px)]"
                                             loading="lazy"
                                         />
                                     </div>
