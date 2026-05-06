@@ -70,6 +70,9 @@ class SitePageController extends Controller
             'wording' => '',
             'cards' => [],
             'cta_title' => 'BE PART OF A JOURNEY TO CREATE THE FUTURE OF LIFESTYLE EXPERIENCES',
+            'cta_subtitle' => '',
+            'cta_image_1_url' => null,
+            'cta_image_2_url' => null,
             'primary_button_label' => 'HEAD OFFICE Join Us',
             'primary_button_url' => '/careers/head-office',
             'secondary_button_label' => 'OPERATION Join Us',
@@ -194,6 +197,8 @@ class SitePageController extends Controller
         return Inertia::render('Site/HomeService', [
             ...$nav,
             'heroImageUrl' => $payload['hero_image_url'] ?? null,
+            'heroTitle' => $payload['hero_title'] ?? null,
+            'heroSubtitle' => $payload['hero_subtitle'] ?? null,
             'landing' => $landing,
         ]);
     }
@@ -207,6 +212,8 @@ class SitePageController extends Controller
         return Inertia::render('Site/HomeServiceMenu', [
             ...$nav,
             'heroImageUrl' => $payload['hero_image_url'] ?? null,
+            'heroTitle' => $payload['hero_title'] ?? null,
+            'heroSubtitle' => $payload['hero_subtitle'] ?? null,
             'packages' => array_values(array_filter($packages, fn ($row) => is_array($row))),
         ]);
     }
@@ -378,6 +385,10 @@ class SitePageController extends Controller
                 'title' => (string) ($brand['title'] ?? ''),
                 'slug' => (string) ($brand['slug'] ?? ''),
                 'logo' => (string) ($brand['logo_cp_url'] ?? $brand['thumbnail_url'] ?? $brand['image_url'] ?? ''),
+                'hero_title' => (string) ($brand['hero_title'] ?? ''),
+                'hero_subtitle' => (string) ($brand['hero_subtitle'] ?? ''),
+                'hero_media_url' => (string) ($brand['hero_media_url'] ?? ''),
+                'hero_media_type' => (string) ($brand['hero_media_type'] ?? ''),
             ];
         })->filter(fn ($row) => is_array($row) && $row['logo'] !== '')->values()->all();
     }

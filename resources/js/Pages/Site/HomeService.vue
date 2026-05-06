@@ -1,27 +1,29 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
     brandLogos: { type: Array, default: () => [] },
     heroImageUrl: { type: String, default: null },
+    heroTitle: { type: String, default: null },
+    heroSubtitle: { type: String, default: null },
     landing: { type: Object, default: () => ({}) },
 });
 
-const { t } = useSiteI18n();
+const { t, lang, setLang, translateMenuLabel } = useSiteI18n();
 
 const pageTitle = computed(() => {
-    const h = String(props.landing?.hero_title || '').trim();
+    const h = String(props.heroTitle || props.landing?.hero_title || '').trim();
     return h || t('homeService');
 });
 
-const heroTitle = computed(() => String(props.landing?.hero_title || '').trim() || t('homeService'));
+const heroTitle = computed(() => String(props.heroTitle || props.landing?.hero_title || '').trim() || t('homeService'));
 
 const heroSubtitleParagraphs = computed(() => {
-    const raw = String(props.landing?.hero_subtitle || '').trim();
+    const raw = String(props.heroSubtitle || props.landing?.hero_subtitle || '').trim();
     if (!raw) return [];
     return raw.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 });
@@ -33,15 +35,49 @@ const blocks = computed(() =>
 const collageImages = computed(() =>
     Array.isArray(props.landing?.collage_images) ? props.landing.collage_images.filter(Boolean) : [],
 );
+function simpleHash(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i += 1) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
+}
+const collageTiles = computed(() =>
+    [...collageImages.value]
+        .map((src) => ({ src, score: simpleHash(src) }))
+        .sort((a, b) => a.score - b.score)
+        .map((x, idx) => ({
+            src: x.src,
+            aspectClass: ['aspect-[4/3]', 'aspect-square', 'aspect-[3/4]', 'aspect-[16/10]', 'aspect-[5/4]'][idx % 5],
+        })),
+);
+const lightboxImages = ref([]);
+const lightboxIndex = ref(0);
 
-const galleryCard = computed(() => props.landing?.gallery_card || null);
+const bookingCard = computed(() => props.landing?.gallery_card || null);
 const menuCard = computed(() => props.landing?.menu_card || null);
 const cta = computed(() => props.landing?.cta || null);
+const navItems = computed(() => {
+    if (props.menus.length > 0) return props.menus;
+    return ['HOME', 'BRAND', 'HOME SERVICE', 'JUSTUS APPS', "WHAT'S ON", 'CAREERS', 'RESERVATION', 'ABOUT'];
+});
+const translatedNavItems = computed(() => navItems.value.map((item) => translateMenuLabel(item)));
+const brandMenuOpen = ref(false);
+let brandMenuCloseTimer = null;
 
 const menuCardHref = computed(() => {
     const u = String(menuCard.value?.url || '').trim();
     return u || '/home-service/menu';
 });
+const bookingCardHref = computed(() => {
+    const u = String(bookingCard.value?.url || '').trim();
+    return u || '/reservation';
+});
+
+function bookingDisplayLabel(label) {
+    const raw = String(label || '').trim();
+    if (!raw) return 'BOOKING & RESERVATION';
+    if (/gallery/i.test(raw)) return 'BOOKING & RESERVATION';
+    return raw;
+}
 
 function youtubeEmbedSrc(url) {
     const u = String(url || '').trim();
@@ -62,15 +98,104 @@ function isDirectVideo(url) {
 function isExternalHref(url) {
     return /^https?:\/\//i.test(String(url || '').trim());
 }
+
+function menuToHref(label) {
+    const key = String(label || '').trim().toUpperCase();
+    if (key === 'HOME') return '/';
+    if (key.includes('HOME SERVICE')) return '/home-service';
+    if (key === 'BRAND') return '/brands';
+    if (key === 'JUSTUS APPS') return '/justus-apps';
+    if (key === "WHAT'S ON") return '/whats-on';
+    if (key === 'CAREERS') return '/careers';
+    if (key === 'RESERVATION') return '/reservation';
+    if (key === 'ABOUT') return '/about';
+    return '#';
+}
+
+function brandHref(brand) {
+    const key = String(brand?.slug || brand?.title || '').trim();
+    return key ? `/brands?brand=${encodeURIComponent(key)}` : '/brands';
+}
+
+function openBrandMenu() {
+    if (brandMenuCloseTimer) {
+        clearTimeout(brandMenuCloseTimer);
+        brandMenuCloseTimer = null;
+    }
+    brandMenuOpen.value = true;
+}
+
+function scheduleCloseBrandMenu() {
+    if (brandMenuCloseTimer) clearTimeout(brandMenuCloseTimer);
+    brandMenuCloseTimer = setTimeout(() => {
+        brandMenuOpen.value = false;
+        brandMenuCloseTimer = null;
+    }, 120);
+}
+
+function isVideoHero() {
+    const src = String(props.heroImageUrl || '');
+    if (!src) return false;
+    return /\.(mp4|webm)(\?.*)?$/i.test(src);
+}
+
+const lightboxOpen = computed(() => lightboxImages.value.length > 0);
+const currentLightboxImage = computed(() => lightboxImages.value[lightboxIndex.value] || '');
+
+function openLightbox(image) {
+    if (!image) return;
+    lightboxImages.value = collageImages.value.slice();
+    lightboxIndex.value = Math.max(0, lightboxImages.value.indexOf(image));
+}
+
+function closeLightbox() {
+    lightboxImages.value = [];
+    lightboxIndex.value = 0;
+}
+
+function nextImage() {
+    if (lightboxImages.value.length <= 1) return;
+    lightboxIndex.value = (lightboxIndex.value + 1) % lightboxImages.value.length;
+}
+
+function prevImage() {
+    if (lightboxImages.value.length <= 1) return;
+    lightboxIndex.value = (lightboxIndex.value - 1 + lightboxImages.value.length) % lightboxImages.value.length;
+}
+
+function onKeyDown(event) {
+    if (!lightboxOpen.value) return;
+    if (event.key === 'Escape') closeLightbox();
+    if (event.key === 'ArrowRight') nextImage();
+    if (event.key === 'ArrowLeft') prevImage();
+}
+
+onMounted(() => window.addEventListener('keydown', onKeyDown));
+onBeforeUnmount(() => {
+    window.removeEventListener('keydown', onKeyDown);
+    if (brandMenuCloseTimer) {
+        clearTimeout(brandMenuCloseTimer);
+        brandMenuCloseTimer = null;
+    }
+});
 </script>
 
 <template>
-    <SiteLayout :title="pageTitle" :menus="menus" :brand-logos="brandLogos">
+    <SiteLayout :title="pageTitle" :menus="menus" :brand-logos="brandLogos" :show-header="false">
         <main class="font-montserrat bg-[#1a1a1c] text-white">
             <!-- Hero -->
-            <section class="relative flex min-h-[72vh] flex-col overflow-hidden md:min-h-[78vh]">
+            <section class="relative flex h-[100dvh] min-h-[100dvh] flex-col overflow-visible">
+                <video
+                    v-if="heroImageUrl && isVideoHero()"
+                    :src="heroImageUrl"
+                    class="absolute inset-0 h-full w-full object-cover"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                />
                 <img
-                    v-if="heroImageUrl"
+                    v-else-if="heroImageUrl"
                     :src="heroImageUrl"
                     alt=""
                     class="absolute inset-0 h-full w-full object-cover"
@@ -78,19 +203,79 @@ function isExternalHref(url) {
                 <div v-else class="absolute inset-0 bg-gradient-to-b from-zinc-800 to-zinc-950" />
                 <div class="absolute inset-0 bg-black/50" />
 
-                <div class="relative z-10 flex flex-1 flex-col px-5 pb-10 pt-24 md:px-10 md:pb-14 md:pt-28">
+                <div class="relative z-10 flex flex-1 flex-col px-5 pb-20 pt-24 md:px-10 md:pb-24 md:pt-28">
                     <div class="flex justify-end">
                         <img src="/logohitam.png" alt="Justus Group" class="h-auto w-[140px] object-contain sm:w-[180px] md:w-[220px]" />
                     </div>
 
                     <div class="mt-auto flex flex-1 flex-col items-center justify-center text-center">
-                        <h1 class="text-3xl font-semibold uppercase tracking-[0.18em] text-white drop-shadow md:text-5xl md:tracking-[0.22em]">
+                        <h1
+                            class="hero-title font-normal uppercase leading-tight tracking-[0.035em]"
+                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 44px"
+                        >
                             {{ heroTitle }}
                         </h1>
-                        <div v-if="heroSubtitleParagraphs.length" class="mt-6 max-w-4xl space-y-4 text-sm font-light leading-relaxed text-white/95 md:text-lg md:leading-relaxed">
+                        <div
+                            v-if="heroSubtitleParagraphs.length"
+                            class="hero-subtitle mt-3 max-w-4xl space-y-2 font-normal italic leading-tight text-white/90"
+                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 20px"
+                        >
                             <p v-for="(para, idx) in heroSubtitleParagraphs" :key="idx" class="whitespace-pre-line">
                                 {{ para }}
                             </p>
+                        </div>
+                    </div>
+                    <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
+                        <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
+                            <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-[12px] tracking-wide text-white/90 sm:text-[14px] md:gap-x-6 md:text-[16px]">
+                                <template v-for="(item, idx) in navItems" :key="item">
+                                    <div
+                                        v-if="String(item).trim().toUpperCase().includes('BRAND')"
+                                        @mouseenter="openBrandMenu"
+                                        @mouseleave="scheduleCloseBrandMenu"
+                                    >
+                                        <Link href="/brands" class="transition hover:text-white">{{ translatedNavItems[idx] }}</Link>
+                                    </div>
+                                    <Link v-else :href="menuToHref(item)" class="transition hover:text-white">
+                                        {{ translatedNavItems[idx] }}
+                                    </Link>
+                                </template>
+                            </nav>
+                            <div class="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[10px] sm:ml-2 sm:text-[11px]">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
+                                    :class="lang === 'id' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
+                                    @click="setLang('id')"
+                                >
+                                    <span aria-hidden>🇮🇩</span> ID
+                                </button>
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
+                                    :class="lang === 'en' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
+                                    @click="setLang('en')"
+                                >
+                                    <span aria-hidden>🇬🇧</span> EN
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            v-if="brandMenuOpen"
+                            class="absolute left-0 right-0 top-full z-[300] bg-[#3f3f43] shadow-xl"
+                            @mouseenter="openBrandMenu"
+                            @mouseleave="scheduleCloseBrandMenu"
+                        >
+                            <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-6 px-6 py-10">
+                                <Link
+                                    v-for="brand in brandLogos"
+                                    :key="brand.id"
+                                    :href="brandHref(brand)"
+                                    class="flex h-[80px] w-[160px] items-center justify-center px-1 transition hover:scale-105 md:h-[96px] md:w-[210px]"
+                                >
+                                    <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -139,9 +324,11 @@ function isExternalHref(url) {
                                 <video
                                     class="h-full w-full bg-black object-contain object-center md:object-cover"
                                     :src="block.video_url"
-                                    controls
+                                    autoplay
+                                    muted
+                                    loop
                                     playsinline
-                                    preload="metadata"
+                                    preload="auto"
                                 />
                             </div>
                             <div class="pointer-events-none absolute inset-0 bg-black/10" />
@@ -165,57 +352,55 @@ function isExternalHref(url) {
             </section>
 
             <!-- Collage -->
-            <section v-if="collageImages.length" class="border-t border-white/10 bg-black px-1 py-1 md:px-2 md:py-2">
-                <div class="mx-auto grid max-w-[1920px] grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-4 md:gap-2">
-                    <img
-                        v-for="(src, ci) in collageImages"
+            <section v-if="collageTiles.length" class="border-t border-white/10 bg-black px-1 py-1 md:px-2 md:py-2">
+                <div class="mx-auto max-w-[1920px] columns-2 gap-1 sm:columns-3 md:columns-4 md:gap-2">
+                    <button
+                        v-for="(tile, ci) in collageTiles"
                         :key="`collage-${ci}`"
-                        :src="src"
-                        alt=""
-                        class="h-36 w-full object-cover sm:h-44 md:h-52"
-                        loading="lazy"
-                    />
+                        type="button"
+                        class="group relative mb-1 block w-full break-inside-avoid overflow-hidden md:mb-2"
+                        @click="openLightbox(tile.src)"
+                    >
+                        <img
+                            :src="tile.src"
+                            alt=""
+                            class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            :class="tile.aspectClass"
+                            loading="lazy"
+                        />
+                    </button>
                 </div>
             </section>
 
-            <!-- Gallery + Menu cards -->
+            <!-- Booking & Menu cards -->
             <section
-                v-if="galleryCard?.image_url || menuCard?.image_url"
+                v-if="bookingCard?.image_url || menuCard?.image_url"
                 class="border-t border-white/10 bg-[#2a2a2e] px-4 py-12 md:px-8 md:py-16"
             >
                 <div class="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 md:gap-10">
-                    <template v-if="galleryCard?.image_url">
+                    <template v-if="bookingCard?.image_url">
                         <a
-                            v-if="galleryCard.url && isExternalHref(galleryCard.url)"
-                            :href="galleryCard.url"
+                            v-if="isExternalHref(bookingCardHref)"
+                            :href="bookingCardHref"
                             target="_blank"
                             rel="noopener noreferrer"
                             class="group relative block overflow-hidden rounded-lg border border-white/15 bg-black/40 shadow-xl"
                         >
-                            <img :src="galleryCard.image_url" alt="" class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                            <img :src="bookingCard.image_url" alt="" class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
                             <div class="absolute inset-x-0 bottom-0 bg-[#4a4a52]/95 py-4 text-center text-sm font-semibold uppercase tracking-[0.2em] text-white">
-                                {{ galleryCard.label || t('gallery') }}
+                                {{ bookingDisplayLabel(bookingCard.label) }}
                             </div>
                         </a>
                         <Link
-                            v-else-if="galleryCard.url"
-                            :href="galleryCard.url"
+                            v-else
+                            :href="bookingCardHref"
                             class="group relative block overflow-hidden rounded-lg border border-white/15 bg-black/40 shadow-xl"
                         >
-                            <img :src="galleryCard.image_url" alt="" class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                            <img :src="bookingCard.image_url" alt="" class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
                             <div class="absolute inset-x-0 bottom-0 bg-[#4a4a52]/95 py-4 text-center text-sm font-semibold uppercase tracking-[0.2em] text-white">
-                                {{ galleryCard.label || t('gallery') }}
+                                {{ bookingDisplayLabel(bookingCard.label) }}
                             </div>
                         </Link>
-                        <div
-                            v-else
-                            class="group relative overflow-hidden rounded-lg border border-white/15 bg-black/40 shadow-xl"
-                        >
-                            <img :src="galleryCard.image_url" alt="" class="aspect-[16/10] w-full object-cover" />
-                            <div class="absolute inset-x-0 bottom-0 bg-[#4a4a52]/95 py-4 text-center text-sm font-semibold uppercase tracking-[0.2em] text-white">
-                                {{ galleryCard.label || t('gallery') }}
-                            </div>
-                        </div>
                     </template>
 
                     <template v-if="menuCard?.image_url">
@@ -282,6 +467,44 @@ function isExternalHref(url) {
                     </Link>
                 </div>
             </section>
+
+            <div
+                v-if="lightboxOpen"
+                class="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 p-4"
+                @click.self="closeLightbox"
+            >
+                <button
+                    type="button"
+                    class="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-black/40 px-3 py-1.5 text-sm text-white hover:bg-black/70"
+                    aria-label="Close lightbox"
+                    @click="closeLightbox"
+                >
+                    ✕
+                </button>
+                <button
+                    v-if="lightboxImages.length > 1"
+                    type="button"
+                    class="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/30 bg-black/40 px-3 py-2 text-xl text-white hover:bg-black/70 md:left-5"
+                    aria-label="Previous image"
+                    @click="prevImage"
+                >
+                    ‹
+                </button>
+                <img
+                    :src="currentLightboxImage"
+                    alt=""
+                    class="max-h-[88vh] w-auto max-w-[94vw] rounded object-contain"
+                />
+                <button
+                    v-if="lightboxImages.length > 1"
+                    type="button"
+                    class="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/30 bg-black/40 px-3 py-2 text-xl text-white hover:bg-black/70 md:right-5"
+                    aria-label="Next image"
+                    @click="nextImage"
+                >
+                    ›
+                </button>
+            </div>
         </main>
     </SiteLayout>
 </template>
