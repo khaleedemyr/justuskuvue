@@ -19,6 +19,7 @@ class SitePageController extends Controller
         $menus = $this->erp->get('web-profile/menu');
         $brands = $this->erp->get('web-profile/brands');
         $banners = $this->erp->get('web-profile/banners');
+        $promoSlides = $this->erp->get('web-profile/promo-slides');
         $blocks = $this->erp->get('web-profile/home-blocks');
         $whatsOn = $this->extractWhatsOnItems($this->erp->get('mobile/member/whats-on'));
 
@@ -26,6 +27,7 @@ class SitePageController extends Controller
             'menus' => $this->normalizeMenuLabels($menus),
             'brandLogos' => $this->normalizeBrandLogos($brands),
             'banner' => $banners[0] ?? null,
+            'promoSlides' => array_values(array_filter(is_array($promoSlides) ? $promoSlides : [], fn ($r) => is_array($r))),
             'blocks' => array_values(array_filter($blocks, fn ($r) => is_array($r))),
             'news' => $whatsOn,
         ]);
@@ -187,9 +189,22 @@ class SitePageController extends Controller
     {
         $nav = $this->baseNavData();
         $payload = $this->erp->get('web-profile/home-service-packages');
-        $packages = is_array($payload['packages'] ?? null) ? $payload['packages'] : [];
+        $landing = is_array($payload['landing'] ?? null) ? $payload['landing'] : [];
 
         return Inertia::render('Site/HomeService', [
+            ...$nav,
+            'heroImageUrl' => $payload['hero_image_url'] ?? null,
+            'landing' => $landing,
+        ]);
+    }
+
+    public function homeServiceMenu(): Response
+    {
+        $nav = $this->baseNavData();
+        $payload = $this->erp->get('web-profile/home-service-packages');
+        $packages = is_array($payload['packages'] ?? null) ? $payload['packages'] : [];
+
+        return Inertia::render('Site/HomeServiceMenu', [
             ...$nav,
             'heroImageUrl' => $payload['hero_image_url'] ?? null,
             'packages' => array_values(array_filter($packages, fn ($row) => is_array($row))),

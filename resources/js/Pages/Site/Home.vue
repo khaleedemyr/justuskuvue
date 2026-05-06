@@ -1,13 +1,14 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
     brandLogos: { type: Array, default: () => [] },
     banner: { type: Object, default: null },
+    promoSlides: { type: Array, default: () => [] },
     blocks: { type: Array, default: () => [] },
     news: { type: Array, default: () => [] },
 });
@@ -21,7 +22,45 @@ const newsScrollerRef = ref(null);
 let newsAutoSlideTimer = null;
 const brandMenuOpen = ref(false);
 let brandMenuCloseTimer = null;
+const promoStep = ref(0);
+let promoAutoplayTimer = null;
+/** Desktop md+: tampil 3 banner per slide */
+const isDesktopPromoGrid = ref(false);
+let promoMqCleanup = null;
 const { lang, setLang, t, translateMenuLabel } = useSiteI18n();
+
+const promoSlidesList = computed(() =>
+    (Array.isArray(props.promoSlides) ? props.promoSlides : []).filter((s) => s && String(s.image || '').trim() !== ''),
+);
+
+const promoDesktopPages = computed(() => {
+    const list = promoSlidesList.value;
+    const pages = [];
+    for (let i = 0; i < list.length; i += 3) {
+        pages.push(list.slice(i, i + 3));
+    }
+    return pages;
+});
+
+const promoStepCount = computed(() => {
+    const n = promoSlidesList.value.length;
+    if (n === 0) return 0;
+    if (isDesktopPromoGrid.value) {
+        return Math.ceil(n / 3);
+    }
+    return n;
+});
+
+watch([promoSlidesList, promoStepCount], () => {
+    const c = promoStepCount.value;
+    if (c === 0) {
+        promoStep.value = 0;
+        return;
+    }
+    if (promoStep.value >= c) {
+        promoStep.value = 0;
+    }
+});
 
 const navItems = computed(() => {
     if (props.menus.length > 0) return props.menus;
@@ -164,8 +203,48 @@ function stopNewsAutoSlide() {
     }
 }
 
+function stopPromoAutoplay() {
+    if (promoAutoplayTimer) {
+        clearInterval(promoAutoplayTimer);
+        promoAutoplayTimer = null;
+    }
+}
+
+function startPromoAutoplay() {
+    stopPromoAutoplay();
+    const c = promoStepCount.value;
+    if (c <= 1) return;
+    promoAutoplayTimer = window.setInterval(() => {
+        const steps = promoStepCount.value;
+        if (steps <= 1) return;
+        promoStep.value = (promoStep.value + 1) % steps;
+    }, 6000);
+}
+
+function goPromo(dir) {
+    const c = promoStepCount.value;
+    if (c === 0) return;
+    promoStep.value = (promoStep.value + dir + c) % c;
+    startPromoAutoplay();
+}
+
+function setPromo(i) {
+    promoStep.value = i;
+    startPromoAutoplay();
+}
+
+function syncPromoBreakpoint() {
+    if (typeof window === 'undefined') return;
+    isDesktopPromoGrid.value = window.matchMedia('(min-width: 768px)').matches;
+}
+
 onMounted(() => {
     updatePinned();
+    syncPromoBreakpoint();
+    const mq = window.matchMedia('(min-width: 768px)');
+    mq.addEventListener('change', syncPromoBreakpoint);
+    promoMqCleanup = () => mq.removeEventListener('change', syncPromoBreakpoint);
+
     window.addEventListener('scroll', updatePinned, { passive: true });
     window.addEventListener('resize', updatePinned);
 
@@ -183,13 +262,17 @@ onMounted(() => {
 
     document.querySelectorAll('[data-reveal]').forEach((el) => revealObserver?.observe(el));
     startNewsAutoSlide();
+    startPromoAutoplay();
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', updatePinned);
     window.removeEventListener('resize', updatePinned);
+    promoMqCleanup?.();
+    promoMqCleanup = null;
     revealObserver?.disconnect();
     stopNewsAutoSlide();
+    stopPromoAutoplay();
     if (brandMenuCloseTimer) {
         clearTimeout(brandMenuCloseTimer);
     }
@@ -198,11 +281,11 @@ onBeforeUnmount(() => {
 
 <template>
     <SiteLayout title="Home" :show-header="false">
-        <main class="w-full overflow-x-hidden bg-black text-white">
-            <div ref="heroRef" class="relative flex h-[74svh] min-h-[420px] w-full flex-col overflow-visible bg-black md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh]">
+        <main class="font-montserrat w-full overflow-x-hidden bg-black text-white">
+            <div ref="heroRef" class="relative flex h-[60svh] min-h-[320px] w-full flex-col overflow-visible bg-black sm:h-[68svh] sm:min-h-[360px] md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh]">
                 <template v-if="banner?.image && isVideoBanner()">
                     <video
-                        class="absolute inset-0 h-full w-full bg-black object-contain object-center"
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                         :src="banner.image"
                         autoplay
                         muted
@@ -219,7 +302,7 @@ onBeforeUnmount(() => {
                     <img
                         :src="banner.image"
                         :alt="banner?.title || 'Head Banner'"
-                        class="absolute inset-0 h-full w-full bg-black object-contain object-center"
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     />
                 </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />
@@ -228,10 +311,21 @@ onBeforeUnmount(() => {
 
                 <div class="relative z-10 flex min-h-0 flex-1 flex-col">
                     <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
-                        <h1 class="text-4xl font-semibold uppercase tracking-[0.035em] md:text-6xl">
+                        <img
+                            src="/logohitam.png"
+                            alt="Justus Group"
+                            class="mb-4 h-auto w-[220px] object-contain sm:mb-5 sm:w-[260px] md:mb-6 md:w-[320px]"
+                        />
+                        <h1
+                            class="hero-title font-normal uppercase leading-tight tracking-[0.035em]"
+                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 44px"
+                        >
                             {{ banner?.title || 'CRAFTED GUEST JOURNEY' }}
                         </h1>
-                        <p class="mt-3 text-lg text-white/90 md:text-2xl">
+                        <p
+                            class="hero-subtitle mt-3 font-normal italic leading-tight text-white/90"
+                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 20px"
+                        >
                             {{ banner?.subtitle || 'Warm Caring Hospitality Experiences' }}
                         </p>
                     </div>
@@ -243,7 +337,7 @@ onBeforeUnmount(() => {
                     class="relative w-full border-y border-white/10 bg-black/75 backdrop-blur-md"
                 >
                     <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
-                        <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-xs tracking-wide text-white/90 sm:text-sm md:gap-x-6 md:text-lg">
+                        <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-[12px] tracking-wide text-white/90 sm:text-[14px] md:gap-x-6 md:text-[16px]">
                             <template v-for="(item, idx) in navItems" :key="item">
                                 <div
                                     v-if="String(item).trim().toUpperCase().includes('BRAND')"
@@ -297,6 +391,120 @@ onBeforeUnmount(() => {
             </div>
             <div aria-hidden class="shrink-0" :style="{ height: pinned ? `${navHeight}px` : '0px' }" />
 
+            <section v-if="promoSlidesList.length > 0" class="relative w-full max-w-none border-y border-white/10 bg-[#1b1b1f]">
+                <!-- Mobile: 1 banner per slide; Desktop md+: 3 banner per slide -->
+                <div class="relative w-full">
+                    <div class="relative overflow-hidden">
+                        <!-- Mobile strip -->
+                        <div
+                            class="flex transition-transform duration-500 ease-out md:hidden"
+                            :style="{ transform: `translateX(-${promoStep * 100}%)` }"
+                        >
+                            <div
+                                v-for="slide in promoSlidesList"
+                                :key="slide.id"
+                                class="min-w-full shrink-0"
+                            >
+                                <a
+                                    v-if="slide.link_url"
+                                    :href="slide.link_url"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80"
+                                >
+                                    <img
+                                        :src="slide.image"
+                                        :alt="slide.title || 'Promo'"
+                                        class="block h-auto w-full max-h-[min(52svh,400px)] object-contain object-center sm:max-h-[min(48svh,460px)]"
+                                        loading="lazy"
+                                    />
+                                </a>
+                                <img
+                                    v-else
+                                    :src="slide.image"
+                                    :alt="slide.title || 'Promo'"
+                                    class="block h-auto w-full max-h-[min(52svh,400px)] object-contain object-center sm:max-h-[min(48svh,460px)]"
+                                    loading="lazy"
+                                />
+                            </div>
+                        </div>
+                        <!-- Desktop: halaman berisi grid 3 kolom -->
+                        <div
+                            class="hidden transition-transform duration-500 ease-out md:flex"
+                            :style="{ transform: `translateX(-${promoStep * 100}%)` }"
+                        >
+                            <div
+                                v-for="(page, pageIdx) in promoDesktopPages"
+                                :key="`promo-page-${pageIdx}`"
+                                class="min-w-full shrink-0 px-3 py-2 md:px-6 md:py-3"
+                            >
+                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+                                    <div
+                                        v-for="slide in page"
+                                        :key="slide.id"
+                                        class="flex min-h-0 min-w-0 flex-col justify-center"
+                                    >
+                                        <a
+                                            v-if="slide.link_url"
+                                            :href="slide.link_url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80"
+                                        >
+                                            <img
+                                                :src="slide.image"
+                                                :alt="slide.title || 'Promo'"
+                                                class="block h-auto w-full max-h-[min(34vh,320px)] object-contain object-center lg:max-h-[min(38vh,380px)]"
+                                                loading="lazy"
+                                            />
+                                        </a>
+                                        <img
+                                            v-else
+                                            :src="slide.image"
+                                            :alt="slide.title || 'Promo'"
+                                            class="block h-auto w-full max-h-[min(34vh,320px)] object-contain object-center lg:max-h-[min(38vh,380px)]"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            v-if="promoStepCount > 1"
+                            type="button"
+                            class="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-lg text-white backdrop-blur-sm transition hover:bg-black/65 md:left-4 md:h-10 md:w-10"
+                            aria-label="Slide sebelumnya"
+                            @click="goPromo(-1)"
+                        >
+                            ‹
+                        </button>
+                        <button
+                            v-if="promoStepCount > 1"
+                            type="button"
+                            class="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-lg text-white backdrop-blur-sm transition hover:bg-black/65 md:right-4 md:h-10 md:w-10"
+                            aria-label="Slide berikutnya"
+                            @click="goPromo(1)"
+                        >
+                            ›
+                        </button>
+                    </div>
+                    <div
+                        v-if="promoStepCount > 1"
+                        class="flex justify-center gap-2 py-3"
+                    >
+                        <button
+                            v-for="i in promoStepCount"
+                            :key="i"
+                            type="button"
+                            class="h-2 rounded-full transition"
+                            :class="i - 1 === promoStep ? 'w-6 bg-amber-400/90' : 'w-2 bg-white/35'"
+                            :aria-label="`Promo slide ${i}`"
+                            @click="setPromo(i - 1)"
+                        />
+                    </div>
+                </div>
+            </section>
+
             <section class="w-full bg-[#2f2f35]">
                 <div class="flex w-full flex-col">
                     <template v-if="pairedBlocks.length === 0">
@@ -336,10 +544,10 @@ onBeforeUnmount(() => {
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <h3 v-if="block.title" class="text-2xl font-semibold leading-tight md:text-4xl">{{ block.title }}</h3>
+                                    <h3 v-if="block.title" class="font-montserrat text-[14px] font-bold leading-[1.35]">{{ block.title }}</h3>
                                     <p
                                         v-if="block.body"
-                                        class="mt-4 whitespace-pre-wrap text-base leading-relaxed sm:mt-5 sm:text-lg md:mt-6 md:text-xl"
+                                        class="font-montserrat mt-4 whitespace-pre-wrap text-[14px] font-normal leading-[1.5] sm:mt-5 md:mt-6"
                                         :class="block.bg_variant === 'light' ? 'text-[#111118]/90' : 'text-white/90'"
                                     >
                                         {{ block.body }}
@@ -376,10 +584,10 @@ onBeforeUnmount(() => {
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <h3 v-if="block.title" class="text-2xl font-semibold leading-tight md:text-4xl">{{ block.title }}</h3>
+                                    <h3 v-if="block.title" class="font-montserrat text-[14px] font-bold leading-[1.35]">{{ block.title }}</h3>
                                     <p
                                         v-if="block.body"
-                                        class="mt-4 whitespace-pre-wrap text-base leading-relaxed sm:mt-5 sm:text-lg md:mt-6 md:text-xl"
+                                        class="font-montserrat mt-4 whitespace-pre-wrap text-[14px] font-normal leading-[1.5] sm:mt-5 md:mt-6"
                                         :class="block.bg_variant === 'light' ? 'text-[#111118]/90' : 'text-white/90'"
                                     >
                                         {{ block.body }}
@@ -451,4 +659,16 @@ onBeforeUnmount(() => {
         </main>
     </SiteLayout>
 </template>
+
+<style scoped>
+.hero-title {
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif !important;
+    font-size: 44px !important;
+}
+
+.hero-subtitle {
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif !important;
+    font-size: 20px !important;
+}
+</style>
 

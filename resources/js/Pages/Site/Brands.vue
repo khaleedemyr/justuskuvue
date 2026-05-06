@@ -38,6 +38,28 @@ function buildMapUrl(outlet) {
     return null;
 }
 
+/** Pastikan label tidak bergantung pada teks lama dari API (mis. masih "Speed Wi-fi"). */
+const FACILITY_LABEL_BY_KEY = {
+    wifi: 'Free Wi-Fi',
+    smoking_area: 'Smoking Area',
+    mushola: 'Mushola',
+    meeting_room: 'Meeting Room',
+    valet_parking: 'Free Valet Parking',
+    dedicated_event_space: 'Dedicated Event Space',
+};
+
+function facilityDisplayLabel(f) {
+    const k = String(f?.key || '').trim();
+    if (k && FACILITY_LABEL_BY_KEY[k]) {
+        return FACILITY_LABEL_BY_KEY[k];
+    }
+    const legacy = String(f?.name || '');
+    if (/speed\s*wi-?fi/i.test(legacy)) {
+        return 'Free Wi-Fi';
+    }
+    return legacy;
+}
+
 const selectedBrand = computed(() => normalizeKey(props.initialBrand || ''));
 
 const selectedBrandKey = computed(() => {
@@ -125,7 +147,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
 
 <template>
     <SiteLayout title="Brands" :menus="menus" :brand-logos="brandLogos">
-        <section class="relative flex min-h-[48vh] items-end overflow-hidden pb-20 pt-28">
+        <section class="relative min-h-[40vh] overflow-hidden md:min-h-[48vh]" aria-label="Brand">
             <template v-if="heroImageUrl">
                 <img
                     :src="heroImageUrl"
@@ -135,15 +157,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                 />
                 <img
                     :src="heroImageUrl"
-                    alt="Brands Hero"
+                    alt=""
                     class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
                 />
             </template>
             <div v-else class="absolute inset-0 bg-zinc-900" />
-            <div class="absolute inset-0 bg-black/50" />
-            <div class="relative z-10 mx-auto w-full max-w-7xl px-6">
-                <h1 class="text-3xl font-semibold tracking-[0.2em] md:text-5xl">BRANDS</h1>
-            </div>
         </section>
 
         <section class="border-t border-white/10 bg-[#3f3f43] px-6 py-10">
@@ -187,9 +205,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                     </div>
 
                     <div v-if="outlet.facility && outlet.facility.length" class="grid grid-cols-2 gap-3">
-                        <div v-for="f in outlet.facility.slice(0, 6)" :key="`${outlet.id}-${f.key}`" class="flex items-center gap-2">
+                        <div v-for="f in outlet.facility.slice(0, 8)" :key="`${outlet.id}-${f.key}`" class="flex items-center gap-2">
                             <img :src="f.image" :alt="f.name" class="h-7 w-7 rounded bg-black object-contain p-1" />
-                            <span class="text-[11px] font-light uppercase leading-tight tracking-[0.04em] md:text-xs">{{ f.name }}</span>
+                            <span class="text-[11px] font-light uppercase leading-tight tracking-[0.04em] md:text-xs">{{ facilityDisplayLabel(f) }}</span>
                         </div>
                     </div>
 

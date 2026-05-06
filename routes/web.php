@@ -32,6 +32,7 @@ Route::get('/news/{id}', [SitePageController::class, 'newsDetail'])
     ->whereNumber('id')
     ->name('site.news.detail');
 Route::get('/justus-apps', [SitePageController::class, 'justusApps'])->name('site.justus-apps');
+Route::get('/home-service/menu', [SitePageController::class, 'homeServiceMenu'])->name('site.home-service.menu');
 Route::get('/home-service', [SitePageController::class, 'homeService'])->name('site.home-service');
 Route::get('/about', [SitePageController::class, 'about'])->name('site.about');
 Route::get('/reservation', [SitePageController::class, 'reservation'])->name('site.reservation');
