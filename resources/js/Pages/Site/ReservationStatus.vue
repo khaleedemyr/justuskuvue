@@ -12,6 +12,7 @@ defineProps({
 
 const page = usePage();
 const { t, lang } = useSiteI18n();
+const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
 
 const reservationNumber = ref('');
 const loading = ref(false);
@@ -46,7 +47,15 @@ async function handleCheckStatus() {
     }
     loading.value = true;
     try {
-        const res = await fetchReservationStatusByNumber(baseUrl.value, normalized);
+        const token = await executeRecaptcha('reservation_status_lookup');
+        if (!token) {
+            error.value =
+                lang.value === 'id'
+                    ? 'Captcha gagal dimuat. Silakan refresh halaman.'
+                    : 'Captcha failed to load. Please refresh the page.';
+            return;
+        }
+        const res = await fetchReservationStatusByNumber(baseUrl.value, normalized, token);
         if (!res.ok) {
             const msg = (res.message || '').toLowerCase();
             error.value =
@@ -59,6 +68,30 @@ async function handleCheckStatus() {
     } finally {
         loading.value = false;
     }
+}
+
+function loadRecaptchaScript() {
+    if (!recaptchaSiteKey.value || typeof window === 'undefined') return;
+    if (window.grecaptcha?.execute) return;
+    if (document.querySelector('script[data-recaptcha-script="1"]')) return;
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(recaptchaSiteKey.value)}`;
+    script.async = true;
+    script.defer = true;
+    script.setAttribute('data-recaptcha-script', '1');
+    document.head.appendChild(script);
+}
+
+async function executeRecaptcha(action) {
+    if (!recaptchaSiteKey.value) return '';
+    loadRecaptchaScript();
+    for (let i = 0; i < 10; i += 1) {
+        if (window.grecaptcha?.execute) {
+            return window.grecaptcha.execute(recaptchaSiteKey.value, { action });
+        }
+        await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return '';
 }
 </script>
 

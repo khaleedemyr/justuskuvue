@@ -72,10 +72,11 @@ export async function fetchReservationAvailabilityLayout(baseApiUrl, params) {
     }
 }
 
-export async function fetchReservationStatusByNumber(baseApiUrl, reservationNumber) {
+export async function fetchReservationStatusByNumber(baseApiUrl, reservationNumber, recaptchaToken) {
     try {
         const query = new URLSearchParams({
             reservation_number: reservationNumber.trim(),
+            recaptcha_token: String(recaptchaToken || '').trim(),
         });
         const base = String(baseApiUrl || '').replace(/\/$/, '');
         const response = await fetch(`${base}/reservations/status-by-number?${query.toString()}`, {

@@ -27,7 +27,32 @@ class ErpSiteProxyController extends Controller
 
     public function statusByNumber(Request $request): Response
     {
-        return $this->forwardJsonGet('reservations/status-by-number', $request);
+        $validated = $request->validate([
+            'reservation_number' => 'required|string|max:80',
+            'recaptcha_token' => 'required|string|max:4096',
+        ]);
+
+        $ipKey = 'reservation-status:ip:'.$request->ip();
+        $numberKey = 'reservation-status:number:'.strtolower(trim((string) $validated['reservation_number']));
+        if (RateLimiter::tooManyAttempts($ipKey, 30) || RateLimiter::tooManyAttempts($numberKey, 12)) {
+            return response()->json([
+                'message' => 'Terlalu banyak percobaan cek status. Coba lagi beberapa menit.',
+            ], 429);
+        }
+
+        if (! $this->verifyRecaptcha((string) $validated['recaptcha_token'], (string) $request->ip(), 'reservation_status_lookup')) {
+            return response()->json([
+                'message' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
+            ], 422);
+        }
+
+        RateLimiter::hit($ipKey, 300);
+        RateLimiter::hit($numberKey, 300);
+
+        $query = [
+            'reservation_number' => (string) $validated['reservation_number'],
+        ];
+        return $this->forwardJsonGet('reservations/status-by-number', new Request($query));
     }
 
     public function selfOrderMenu(Request $request): Response
