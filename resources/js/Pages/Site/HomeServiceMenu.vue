@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
 <template>
     <SiteLayout :title="t('homeServiceMenu')" :menus="menus" :brand-logos="brandLogos" :show-header="false">
         <main class="min-h-[100dvh] bg-[#1a1a1c] text-white">
-            <section class="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-28 md:min-h-[48vh] md:pb-20 md:pt-32">
+            <section class="relative flex h-[100dvh] min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-28 md:pb-20 md:pt-32">
                 <video
                     v-if="heroImageUrl && isVideoHero()"
                     :src="heroImageUrl"
