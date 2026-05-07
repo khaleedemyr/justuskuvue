@@ -298,7 +298,21 @@ class SitePageController extends Controller
     {
         $nav = $this->baseNavData();
         $banners = $this->erp->get('web-profile/banners');
-        $hero = is_array($banners[0] ?? null) ? ($banners[0]['image'] ?? null) : null;
+        $bannerList = collect(is_array($banners) ? $banners : [])
+            ->filter(fn ($row) => is_array($row))
+            ->values();
+
+        $reservationBanner = $bannerList->first(function ($row) {
+            $title = strtolower(trim((string) ($row['title'] ?? '')));
+            $subtitle = strtolower(trim((string) ($row['subtitle'] ?? '')));
+            $haystack = $title.' '.$subtitle;
+
+            return str_contains($haystack, 'reservation') || str_contains($haystack, 'reservasi');
+        });
+
+        $hero = is_array($reservationBanner)
+            ? ($reservationBanner['image'] ?? null)
+            : (is_array($bannerList->first()) ? ($bannerList->first()['image'] ?? null) : null);
 
         return Inertia::render('Site/Reservation', [
             ...$nav,

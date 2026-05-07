@@ -29,11 +29,11 @@ function isVideoHero() {
 <template>
     <SiteLayout title="Justus Apps" :menus="menus" :brand-logos="brandLogos">
         <main class="block w-full bg-black text-white">
-            <section class="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-28 md:pb-20 md:pt-32">
+            <section class="relative flex h-[60svh] min-h-[320px] w-full flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-24 sm:h-[68svh] sm:min-h-[360px] sm:pb-14 sm:pt-28 md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:pb-20 md:pt-32">
                 <video
                     v-if="pageData?.hero_image_url && isVideoHero()"
                     :src="pageData.hero_image_url"
-                    class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                    class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     autoplay
                     muted
                     loop
@@ -49,7 +49,7 @@ function isVideoHero() {
                     />
                     <img
                         :src="pageData.hero_image_url"
-                        class="absolute inset-0 h-full w-full bg-black object-contain object-center md:object-cover"
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                         alt="Justus Apps Hero"
                     />
                 </template>
