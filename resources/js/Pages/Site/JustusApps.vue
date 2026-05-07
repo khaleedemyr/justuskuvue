@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
 <template>
     <SiteLayout title="Justus Apps" :menus="menus" :brand-logos="brandLogos" :show-header="false">
         <main class="block w-full bg-black text-white">
-            <section class="relative flex h-[60svh] min-h-[320px] w-full flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-24 sm:h-[68svh] sm:min-h-[360px] sm:pb-14 sm:pt-28 md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:pb-20 md:pt-32">
+            <section class="relative z-[120] flex h-[60svh] min-h-[320px] w-full flex-col items-center justify-center overflow-visible px-6 pb-12 pt-24 sm:h-[68svh] sm:min-h-[360px] sm:pb-14 sm:pt-28 md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:pb-20 md:pt-32">
                 <video
                     v-if="pageData?.hero_image_url && isVideoHero()"
                     :src="pageData.hero_image_url"
@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
                 <div v-else class="absolute inset-0 bg-zinc-900" />
                 <div class="pointer-events-none absolute inset-0 bg-black/50" />
                 <div class="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10" />
-                <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
+                <div class="absolute inset-x-0 bottom-0 z-[320] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
                     <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
                         <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-[12px] tracking-wide text-white/90 sm:text-[14px] md:gap-x-6 md:text-[16px]">
                             <template v-for="(item, idx) in navItems" :key="item">
