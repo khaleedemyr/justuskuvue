@@ -10,6 +10,12 @@ defineProps({
 });
 
 const { t } = useSiteI18n();
+
+function isVideoHero(url) {
+    const v = String(url || '').trim();
+    if (!v) return false;
+    return /\.(mp4|webm)(\?.*)?$/i.test(v);
+}
 </script>
 
 <template>
@@ -23,7 +29,18 @@ const { t } = useSiteI18n();
             <section
                 class="relative flex min-h-[84vh] flex-col items-center overflow-hidden px-6 pb-14 pt-28 md:min-h-[88vh] md:pt-32"
             >
-                <template v-if="heroImageUrl">
+                <template v-if="heroImageUrl && isVideoHero(heroImageUrl)">
+                    <video
+                        :src="heroImageUrl"
+                        class="absolute inset-0 h-full w-full object-cover object-center"
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                        preload="auto"
+                    />
+                </template>
+                <template v-else-if="heroImageUrl">
                     <img
                         :src="heroImageUrl"
                         alt=""
