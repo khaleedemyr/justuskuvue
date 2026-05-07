@@ -6,14 +6,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('proxy/ymsoft-api')->group(function () {
     Route::get('/reservations/availability-layout', [ErpSiteProxyController::class, 'availabilityLayout'])
+        ->middleware('throttle:erp-proxy-general')
         ->name('erp.proxy.reservations.availability-layout');
     Route::get('/reservations/status-by-number', [ErpSiteProxyController::class, 'statusByNumber'])
+        ->middleware('throttle:erp-proxy-general')
         ->name('erp.proxy.reservations.status-by-number');
     Route::post('/reservations', [ErpSiteProxyController::class, 'storeReservation'])
+        ->middleware('throttle:erp-proxy-write')
         ->name('erp.proxy.reservations.store');
     Route::get('/self-order/menu', [ErpSiteProxyController::class, 'selfOrderMenu'])
+        ->middleware('throttle:erp-proxy-general')
         ->name('erp.proxy.self-order.menu');
     Route::post('/self-order/checkout', [ErpSiteProxyController::class, 'checkoutSelfOrder'])
+        ->middleware('throttle:erp-proxy-write')
         ->name('erp.proxy.self-order.checkout');
 });
 
@@ -26,7 +31,9 @@ Route::get('/careers/head-office', [SitePageController::class, 'careersScope'])
 Route::get('/careers/outlet', [SitePageController::class, 'careersScope'])
     ->defaults('scope', 'outlet')
     ->name('site.careers.outlet');
-Route::post('/careers/apply', [SitePageController::class, 'careersApply'])->name('site.careers.apply');
+Route::post('/careers/apply', [SitePageController::class, 'careersApply'])
+    ->middleware('throttle:erp-proxy-write')
+    ->name('site.careers.apply');
 Route::get('/whats-on', [SitePageController::class, 'whatsOn'])->name('site.whats-on');
 Route::get('/news/{id}', [SitePageController::class, 'newsDetail'])
     ->whereNumber('id')

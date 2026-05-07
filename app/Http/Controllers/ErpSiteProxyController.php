@@ -204,7 +204,9 @@ class ErpSiteProxyController extends Controller
         }
 
         return response($response->body(), $response->status())
-            ->header('Content-Type', 'application/json');
+            ->header('Content-Type', 'application/json')
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     private function forwardJsonPost(string $path, Request $request, ?array $overridePayload = null): Response
@@ -231,7 +233,9 @@ class ErpSiteProxyController extends Controller
         }
 
         return response($response->body(), $response->status())
-            ->header('Content-Type', 'application/json');
+            ->header('Content-Type', 'application/json')
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     private function verifyRecaptcha(string $token, string $ip, string $expectedAction): array

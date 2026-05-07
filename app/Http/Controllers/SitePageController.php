@@ -257,6 +257,10 @@ class SitePageController extends Controller
     {
         $nav = $this->baseNavData();
         $page = $this->erp->get('web-profile/justus-apps-page');
+        if (is_array($page)) {
+            $page['playstore_url'] = $this->sanitizeCmsExternalUrl($page['playstore_url'] ?? null);
+            $page['appstore_url'] = $this->sanitizeCmsExternalUrl($page['appstore_url'] ?? null);
+        }
 
         return Inertia::render('Site/JustusApps', [
             ...$nav,
@@ -269,6 +273,7 @@ class SitePageController extends Controller
         $nav = $this->baseNavData();
         $payload = $this->erp->get('web-profile/home-service-packages');
         $landing = is_array($payload['landing'] ?? null) ? $payload['landing'] : [];
+        $landing = $this->sanitizeHomeServiceLanding($landing);
 
         return Inertia::render('Site/HomeService', [
             ...$nav,
@@ -514,6 +519,59 @@ class SitePageController extends Controller
             ->sortByDesc(fn ($item) => (string) ($item['published_at'] ?? ''))
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $landing
+     * @return array<string, mixed>
+     */
+    private function sanitizeHomeServiceLanding(array $landing): array
+    {
+        foreach (['gallery_card', 'menu_card', 'cta'] as $nodeKey) {
+            if (! isset($landing[$nodeKey]) || ! is_array($landing[$nodeKey])) {
+                continue;
+            }
+            $safeUrl = $this->sanitizeCmsExternalUrl($landing[$nodeKey]['url'] ?? null);
+            $landing[$nodeKey]['url'] = $safeUrl;
+        }
+
+        return $landing;
+    }
+
+    private function sanitizeCmsExternalUrl(mixed $url): ?string
+    {
+        $raw = trim((string) ($url ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        // Relative URL tetap diizinkan (internal navigation).
+        if (str_starts_with($raw, '/')) {
+            return $raw;
+        }
+
+        if (! filter_var($raw, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $parts = parse_url($raw);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if ($host === '') {
+            return null;
+        }
+
+        $allowHttpOnLocal = app()->environment('local');
+        if (! in_array($scheme, $allowHttpOnLocal ? ['http', 'https'] : ['https'], true)) {
+            return null;
+        }
+
+        $allowedHosts = (array) config('services.ymsofterp.allowed_external_hosts', []);
+        if ($allowedHosts === [] || ! in_array($host, $allowedHosts, true)) {
+            return null;
+        }
+
+        return $raw;
     }
 }
 

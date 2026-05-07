@@ -39,6 +39,14 @@ return [
         'api_base_url' => env('YMSOFTERP_API_URL', 'http://127.0.0.1:8000/api'),
         /** E.164 digits for wa.me (same as Next PUBLIC_RESERVATION_WA / CALL_CENTER_WA) */
         'reservation_call_center_wa' => env('RESERVATION_CALL_CENTER_WA', env('CALL_CENTER_WA', '')),
+        /**
+         * Comma-separated allowlist for CMS-driven external links (CTA/menu).
+         * Example: justus.co.id,www.justus.co.id,staging.justus.co.id
+         */
+        'allowed_external_hosts' => array_values(array_filter(array_map(
+            static fn ($h) => strtolower(trim((string) $h)),
+            explode(',', (string) env('ALLOWED_EXTERNAL_HOSTS', 'justus.co.id,www.justus.co.id,staging.justus.co.id,play.google.com,apps.apple.com'))
+        ))),
     ],
 
     'recaptcha' => [
