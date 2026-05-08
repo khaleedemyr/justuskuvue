@@ -518,6 +518,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
             const service = 0;
             const dpp = subtotal;
             const grandTotal = dpp + pb1 + service;
+            let checkoutWarning = null;
+            let createdOrderNo = null;
 
             const stagingResult = await storeSelfOrderStaging(baseUrl.value, {
                 reservation_number: reservationNumberForSuccess || null,
@@ -552,27 +554,27 @@ export function useReservationArrange(outletsSource, t, langRef) {
             });
 
             if (!stagingResult.ok) {
-                selfOrderError.value = stagingResult.message;
-                return;
-            }
+                checkoutWarning = stagingResult.message || 'Failed to store self order staging payload.';
+            } else {
+                const orderResult = await checkoutSelfOrder(baseUrl.value, {
+                    menu_book_id: selfOrderMenu.value.menu_book.id,
+                    customer_name: name.value.trim(),
+                    customer_phone: phone.value.trim() || null,
+                    order_type: 'dine_in',
+                    notes: notes.value.trim() || null,
+                    items: selfOrderSelectedItems.value.map((item) => ({
+                        item_id: item.id,
+                        qty: item.qty,
+                        notes: item.notes || null,
+                        modifiers: item.selectedModifiers || {},
+                    })),
+                });
 
-            const orderResult = await checkoutSelfOrder(baseUrl.value, {
-                menu_book_id: selfOrderMenu.value.menu_book.id,
-                customer_name: name.value.trim(),
-                customer_phone: phone.value.trim() || null,
-                order_type: 'dine_in',
-                notes: notes.value.trim() || null,
-                items: selfOrderSelectedItems.value.map((item) => ({
-                    item_id: item.id,
-                    qty: item.qty,
-                    notes: item.notes || null,
-                    modifiers: item.selectedModifiers || {},
-                })),
-            });
-
-            if (!orderResult.ok) {
-                selfOrderError.value = orderResult.message;
-                return;
+                if (!orderResult.ok) {
+                    checkoutWarning = orderResult.message || 'Failed to checkout self order.';
+                } else {
+                    createdOrderNo = orderResult.data?.order_no || null;
+                }
             }
 
             const finalReservationNumber =
@@ -594,10 +596,17 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 orderMethod: 'self',
             };
             submitted.value = true;
-            message.value =
-                langRef.value === 'id'
-                    ? `Pesanan mandiri berhasil dibuat (${orderResult.data.order_no}).`
-                    : `Self order created (${orderResult.data.order_no}).`;
+            if (checkoutWarning) {
+                message.value =
+                    langRef.value === 'id'
+                        ? 'Reservasi berhasil dibuat. Pesanan mandiri sedang diproses, tim kami akan membantu konfirmasi pesanan Anda.'
+                        : 'Reservation was created successfully. Self-order is being processed and our team will help confirm your order.';
+            } else {
+                message.value =
+                    langRef.value === 'id'
+                        ? `Pesanan mandiri berhasil dibuat (${createdOrderNo}).`
+                        : `Self order created (${createdOrderNo}).`;
+            }
             selfOrderCart.value = {};
             selfOrderMeta.value = {};
         } finally {
