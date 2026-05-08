@@ -597,8 +597,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     price: item.price || 0,
                     subtotal: (item.price || 0) * (item.qty || 0),
                     tally: null,
-                    modifiers: item.selectedModifiers || {},
-                    modifiers_named: buildNamedModifiersForStaging(item),
+                    modifiers: buildNamedModifiersForStaging(item),
+                    modifiers_id_map: item.selectedModifiers || {},
                     notes: item.notes || null,
                 })),
             });
@@ -620,8 +620,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     item_id: item.id,
                     qty: item.qty,
                     notes: item.notes || null,
-                    modifiers: item.selectedModifiers || {},
-                    modifiers_named: buildNamedModifiersForStaging(item),
+                    modifiers: buildNamedModifiersForStaging(item),
+                    modifiers_id_map: item.selectedModifiers || {},
                 })),
             });
 
