@@ -90,12 +90,12 @@ export const reservationEn = {
     reservationPaymentStep: 'Payment',
     reservationSummaryStep: 'Summary',
     reservationSummaryLead: 'Check that everything is correct before you submit.',
-    reservationPaymentLead: 'Review deposit payment instructions before final confirmation.',
+    reservationPaymentLead: 'Please transfer the exact deposit amount shown below, then use the QRIS section as your payment reference before final submission.',
     reservationWizardStepPendingChannel: 'Next step',
     reservationSummaryOrderingMethod: 'Ordering method',
     reservationSummaryAreaLabel: 'Seating area',
     reservationSummaryNext: 'Continue to summary',
-    reservationPaymentNext: 'Continue to final confirmation',
+    reservationPaymentNext: 'Continue to payment',
     reservationCartGoToSummary: 'Go to summary',
     reservationConfirmSelfOrderSubmit: 'Confirm & submit order',
     reservationSelfOrderNeedItems: 'Add at least one menu item to your cart before continuing.',
@@ -113,8 +113,9 @@ export const reservationEn = {
     reservationPaymentReviewRequired:
         'Please review the payment section before continuing.',
     reservationPaymentAmountNote:
-        'The exact transfer amount with unique digits will be shown again after the reservation is successfully created.',
+        'Please transfer exactly the amount shown above, including the 3 unique digits, to make payment verification easier.',
     reservationPaymentQrisLabel: 'QRIS payment',
+    reservationDownloadQris: 'Download QRIS',
     reservationTermsItem1:
         'Guests are required to arrive 15 minutes prior to their reservation time.',
     reservationTermsItem2:
@@ -263,12 +264,12 @@ export const reservationId = {
     reservationPaymentStep: 'Pembayaran',
     reservationSummaryStep: 'Ringkasan',
     reservationSummaryLead: 'Pastikan data sudah benar sebelum mengirim.',
-    reservationPaymentLead: 'Tinjau instruksi pembayaran deposit sebelum konfirmasi final.',
+    reservationPaymentLead: 'Silakan transfer tepat sesuai nominal deposit yang tampil di bawah, lalu gunakan bagian QRIS sebagai acuan pembayaran sebelum kirim akhir.',
     reservationWizardStepPendingChannel: 'Langkah berikutnya',
     reservationSummaryOrderingMethod: 'Cara order',
     reservationSummaryAreaLabel: 'Area tempat duduk',
     reservationSummaryNext: 'Lanjut ke ringkasan',
-    reservationPaymentNext: 'Lanjut ke konfirmasi final',
+    reservationPaymentNext: 'Lanjut ke pembayaran',
     reservationCartGoToSummary: 'Ke ringkasan',
     reservationConfirmSelfOrderSubmit: 'Konfirmasi & kirim pesanan',
     reservationSelfOrderNeedItems:
@@ -287,8 +288,9 @@ export const reservationId = {
     reservationPaymentReviewRequired:
         'Silakan tinjau bagian pembayaran terlebih dahulu.',
     reservationPaymentAmountNote:
-        'Nominal transfer final dengan 3 digit unik akan ditampilkan lagi setelah reservasi berhasil dibuat.',
+        'Silakan transfer tepat sesuai nominal di atas, termasuk 3 digit uniknya, agar verifikasi pembayaran lebih mudah.',
     reservationPaymentQrisLabel: 'Pembayaran QRIS',
+    reservationDownloadQris: 'Download QRIS',
     reservationTermsItem1: 'Tamu wajib tiba 15 menit sebelum jam reservasi.',
     reservationTermsItem2:
         'Perubahan jumlah tamu harus diinformasikan lebih dulu melalui Customer Service kami.',

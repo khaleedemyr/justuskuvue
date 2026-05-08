@@ -826,15 +826,31 @@ export function useReservationArrange(outletsSource, t, langRef) {
         wizardStep.value = 5;
     }
 
-    function handleGoToSelfFinalConfirmation() {
+    async function handleGoToSelfPayment() {
         submitError.value = null;
         if (selfOrderSelectedItems.value.length === 0) {
             submitError.value = t('reservationSelfOrderNeedItems');
             return;
         }
-        if (!selfOrderPaymentConfirmed.value) {
-            submitError.value = t('reservationPaymentReviewRequired');
+        if (!acceptedReservationTerms.value) {
+            submitError.value = t('reservationTermsRequired');
             return;
+        }
+        isSubmitting.value = true;
+        try {
+            if (!reservationCreated.value) {
+                const reservationResult = await submitReservationRequest();
+                if (!reservationResult.ok) {
+                    submitError.value = reservationResult.error || t('reservationSubmitFailed');
+                    return;
+                }
+                reservationCreated.value = true;
+                if (reservationResult.reservationNumber) {
+                    savedReservationNumber.value = reservationResult.reservationNumber;
+                }
+            }
+        } finally {
+            isSubmitting.value = false;
         }
         wizardStep.value = 6;
     }
@@ -853,8 +869,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
             return [
                 ...base,
                 { id: 4, label: t('reservationWizardSelfOrderMenu') },
-                { id: 5, label: t('reservationPaymentStep') },
-                { id: 6, label: t('reservationSummaryStep') },
+                { id: 5, label: t('reservationSummaryStep') },
+                { id: 6, label: t('reservationPaymentStep') },
             ];
         }
         return [...base, { id: 4, label: t('reservationWizardStepPendingChannel') }];
@@ -882,6 +898,32 @@ export function useReservationArrange(outletsSource, t, langRef) {
         const base = String(erpWebBaseUrl.value || '').replace(/\/$/, '');
         return base ? `${base}/api/web-profile/qris-image` : '';
     });
+
+    async function handleDownloadPaymentQris() {
+        if (!paymentQrisImageUrl.value) return;
+        const filename = `qris-payment-${(savedReservationNumber.value || 'reservation').replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+        try {
+            const response = await fetch(paymentQrisImageUrl.value, { mode: 'cors' });
+            if (!response.ok) throw new Error('download_failed');
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objectUrl);
+        } catch {
+            const a = document.createElement('a');
+            a.href = paymentQrisImageUrl.value;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
 
     const successQrPayload = computed(() => successInfo.value?.reservationNumber || '');
 
@@ -1036,13 +1078,14 @@ export function useReservationArrange(outletsSource, t, langRef) {
         handleAdvanceFromStep3,
         handleManualSubmitFromSummary,
         handleGoToSelfSummaryFromMenu,
-        handleGoToSelfFinalConfirmation,
+        handleGoToSelfPayment,
         wizardStepsMeta,
         tableNamesSummary,
         smokingSummaryLabel,
         baseReservationDepositAmount,
         reservationDepositAmount,
         paymentQrisImageUrl,
+        handleDownloadPaymentQris,
         successQrUrl,
         handleDownloadSuccessQr,
         reservationTermKeys,
