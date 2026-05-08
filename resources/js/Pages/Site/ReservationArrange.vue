@@ -969,7 +969,7 @@ onMounted(() => {
                                             >
                                                 <span class="text-white/45">{{ t('reservationDeposit') }}</span>
                                                 <span class="font-semibold text-amber-100">{{
-                                                    form.formatCurrency(form.reservationDepositAmount)
+                                                    form.formatCurrency(form.baseReservationDepositAmount)
                                                 }}</span>
                                             </div>
                                             <div
@@ -1312,7 +1312,7 @@ onMounted(() => {
                                             >
                                                 <span class="text-white/45">{{ t('reservationDeposit') }}</span>
                                                 <span class="font-semibold text-amber-100">{{
-                                                    form.formatCurrency(form.reservationDepositAmount)
+                                                    form.formatCurrency(form.baseReservationDepositAmount)
                                                 }}</span>
                                             </div>
                                             <div
@@ -1559,7 +1559,9 @@ onMounted(() => {
                                         >
                                             <span class="text-white/45">{{ t('reservationDeposit') }}</span>
                                             <span class="font-semibold text-amber-100">{{
-                                                form.formatCurrency((form.successInfo?.pax || 0) * 100000)
+                                                form.formatCurrency(
+                                                    form.successInfo?.dpAmount ?? ((form.successInfo?.pax || 0) * 100000),
+                                                )
                                             }}</span>
                                         </div>
                                         <div
@@ -1592,6 +1594,23 @@ onMounted(() => {
                                         >
                                             QR unavailable
                                         </div>
+                                        <p class="mt-4 text-center text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+                                            {{ lang === 'id' ? 'Nominal transfer DP' : 'DP transfer amount' }}
+                                        </p>
+                                        <p class="mt-1 text-center text-lg font-bold text-amber-100">
+                                            {{
+                                                form.formatCurrency(
+                                                    form.successInfo?.dpAmount ?? ((form.successInfo?.pax || 0) * 100000),
+                                                )
+                                            }}
+                                        </p>
+                                        <p class="mt-2 text-center text-xs leading-relaxed text-white/65">
+                                            {{
+                                                lang === 'id'
+                                                    ? 'Silakan transfer dengan nominal tepat seperti di atas (termasuk 3 digit unik) agar pembayaran mudah diverifikasi.'
+                                                    : 'Please transfer the exact amount above (including the 3 unique digits) for easier payment verification.'
+                                            }}
+                                        </p>
                                         <button
                                             type="button"
                                             class="mt-4 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"

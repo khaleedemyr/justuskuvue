@@ -4,6 +4,7 @@ import {
     createReservation,
     fetchReservationAvailabilityLayout,
     fetchSelfOrderMenu,
+    storeSelfOrderStaging,
 } from '@/lib/ymsoftApi';
 import {
     RESERVATION_BLOCK_MINUTES,
@@ -383,6 +384,20 @@ export function useReservationArrange(outletsSource, t, langRef) {
         }).format(value || 0);
     }
 
+    function buildUniqueDpAmount(baseAmount, reservationNumber) {
+        const base = Number(baseAmount || 0);
+        if (!Number.isFinite(base) || base <= 0) return 0;
+        const raw = String(reservationNumber || '').trim();
+        if (!raw) return base;
+        let hash = 0;
+        for (let i = 0; i < raw.length; i += 1) {
+            hash = (hash * 31 + raw.charCodeAt(i)) % 1000;
+        }
+        // Keep 3-digit uniqueness and avoid exact base amount.
+        const uniqueCode = hash === 0 ? 123 : hash;
+        return base + uniqueCode;
+    }
+
     const selfOrderSelectedItems = computed(() => {
         if (!selfOrderMenu.value) return [];
         return selfOrderMenu.value.items
@@ -496,6 +511,49 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 }
             }
 
+            const subtotal = selfOrderSubtotal.value;
+            const pb1 = 0;
+            const service = 0;
+            const dpp = subtotal;
+            const grandTotal = dpp + pb1 + service;
+
+            const stagingResult = await storeSelfOrderStaging(baseUrl.value, {
+                reservation_number: reservationNumberForSuccess || null,
+                outlet_id: Number(outletId.value),
+                customer_name: name.value.trim() || null,
+                customer_phone: phone.value.trim() || null,
+                customer_email: email.value.trim() || null,
+                order_channel: 'self_order_web',
+                order_type: 'dine_in',
+                pax: pax.value,
+                table_ids: selectedTableIds.value,
+                notes: notes.value.trim() || null,
+                subtotal,
+                discount: 0,
+                cashback: 0,
+                dpp,
+                pb1,
+                service,
+                grand_total: grandTotal,
+                commfee: 0,
+                rounding: 0,
+                items: selfOrderSelectedItems.value.map((item) => ({
+                    item_id: String(item.id),
+                    item_name: item.name,
+                    qty: item.qty,
+                    price: item.price || 0,
+                    subtotal: (item.price || 0) * (item.qty || 0),
+                    tally: null,
+                    modifiers: item.selectedModifiers || {},
+                    notes: item.notes || null,
+                })),
+            });
+
+            if (!stagingResult.ok) {
+                selfOrderError.value = stagingResult.message;
+                return;
+            }
+
             const orderResult = await checkoutSelfOrder(baseUrl.value, {
                 menu_book_id: selfOrderMenu.value.menu_book.id,
                 customer_name: name.value.trim(),
@@ -517,6 +575,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
 
             const finalReservationNumber =
                 normalizeReservationNumber(reservationNumberForSuccess || null) || '-';
+            const baseDpAmount = pax.value * 100000;
+            const uniqueDpAmount = buildUniqueDpAmount(baseDpAmount, finalReservationNumber);
             successInfo.value = {
                 reservationNumber: finalReservationNumber,
                 name: name.value.trim() || '-',
@@ -526,6 +586,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 date: date.value || '-',
                 time: time.value || '-',
                 pax: pax.value,
+                dpAmount: uniqueDpAmount,
                 table: tableNamesSummary.value || '-',
                 area: smokingType.value === 'smoking' ? 'Smoking' : 'Non-Smoking',
                 orderMethod: 'self',
@@ -731,6 +792,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
             }
             const reservationLabel =
                 normalizeReservationNumber(String(reservationNumberForWa || '').trim()) || '-';
+            const baseDpAmount = pax.value * 100000;
+            const uniqueDpAmount = buildUniqueDpAmount(baseDpAmount, reservationLabel);
             successInfo.value = {
                 reservationNumber: reservationLabel,
                 name: name.value.trim() || '-',
@@ -740,6 +803,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 date: date.value || '-',
                 time: time.value || '-',
                 pax: pax.value,
+                dpAmount: uniqueDpAmount,
                 table: tableNamesSummary.value || '-',
                 area: smokingType.value === 'smoking' ? 'Smoking' : 'Non-Smoking',
                 orderMethod: 'manual',
@@ -790,7 +854,13 @@ export function useReservationArrange(outletsSource, t, langRef) {
         smokingType.value === 'smoking' ? t('reservationSmokingArea') : t('reservationNonSmokingArea'),
     );
 
-    const reservationDepositAmount = computed(() => pax.value * 100000);
+    const baseReservationDepositAmount = computed(() => pax.value * 100000);
+
+    const reservationDepositAmount = computed(() => {
+        const reservationNumberForDp =
+            (successInfo.value?.reservationNumber || savedReservationNumber.value || '').trim();
+        return buildUniqueDpAmount(baseReservationDepositAmount.value, reservationNumberForDp);
+    });
 
     const successQrPayload = computed(() => successInfo.value?.reservationNumber || '');
 
@@ -947,6 +1017,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         wizardStepsMeta,
         tableNamesSummary,
         smokingSummaryLabel,
+        baseReservationDepositAmount,
         reservationDepositAmount,
         successQrUrl,
         handleDownloadSuccessQr,

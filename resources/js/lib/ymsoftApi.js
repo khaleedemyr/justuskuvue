@@ -196,3 +196,29 @@ export async function checkoutSelfOrder(baseApiUrl, payload) {
         return { ok: false, message: 'Failed to checkout self order.' };
     }
 }
+
+export async function storeSelfOrderStaging(baseApiUrl, payload) {
+    try {
+        const base = String(baseApiUrl || '').replace(/\/$/, '');
+        const response = await fetch(`${base}/self-order/staging`, {
+            method: 'POST',
+            ...fetchDefaults(),
+            headers: {
+                ...fetchDefaults().headers,
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            body: JSON.stringify(payload),
+        });
+        const json = await response.json();
+        if (!response.ok || !json.success || !json.data) {
+            return {
+                ok: false,
+                message: json.message || 'Failed to store self order staging payload.',
+            };
+        }
+        return { ok: true, data: json.data };
+    } catch {
+        return { ok: false, message: 'Failed to connect self order staging API.' };
+    }
+}

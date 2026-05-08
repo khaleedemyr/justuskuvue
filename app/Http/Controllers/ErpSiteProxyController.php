@@ -6,9 +6,11 @@ use App\Services\YmsoftErpClient;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -187,6 +189,137 @@ class ErpSiteProxyController extends Controller
     public function checkoutSelfOrder(Request $request): Response
     {
         return $this->forwardJsonPost('self-order/checkout', $request);
+    }
+
+    public function storeSelfOrderStaging(Request $request): Response
+    {
+        $payload = $request->json()->all() ?: $request->all();
+
+        $validator = validator($payload, [
+            'reservation_id' => 'nullable|integer|min:1',
+            'reservation_number' => 'nullable|string|max:100',
+            'order_no' => 'nullable|string|max:100',
+            'outlet_id' => 'required|integer|min:1',
+            'outlet_code' => 'nullable|string|max:50',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:50',
+            'customer_email' => 'nullable|email|max:190',
+            'order_channel' => 'nullable|string|max:50',
+            'order_type' => 'nullable|string|max:50',
+            'pax' => 'nullable|integer|min:1|max:200',
+            'table_ids' => 'nullable|array',
+            'table_ids.*' => 'integer|min:1',
+            'notes' => 'nullable|string',
+            'subtotal' => 'required|integer|min:0',
+            'discount' => 'nullable|integer|min:0',
+            'cashback' => 'nullable|integer|min:0',
+            'dpp' => 'required|integer|min:0',
+            'pb1' => 'required|integer|min:0',
+            'service' => 'required|integer|min:0',
+            'grand_total' => 'required|integer|min:0',
+            'commfee' => 'nullable|numeric|min:0',
+            'rounding' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required',
+            'items.*.item_name' => 'required|string|max:255',
+            'items.*.qty' => 'required|integer|min:1|max:9999',
+            'items.*.price' => 'required|integer|min:0',
+            'items.*.subtotal' => 'required|integer|min:0',
+            'items.*.tally' => 'nullable|string|max:100',
+            'items.*.modifiers' => 'nullable',
+            'items.*.notes' => 'nullable|string',
+            'items.*.b1g1_promo_id' => 'nullable|integer|min:1',
+            'items.*.b1g1_status' => 'nullable|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payload self order staging tidak valid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+        $orderId = (string) Str::ulid();
+        $orderNo = trim((string) ($validated['order_no'] ?? ''));
+        if ($orderNo === '') {
+            $orderNo = 'WSO-'.now()->format('YmdHis').'-'.strtoupper(Str::random(4));
+        }
+
+        $tableIds = $validated['table_ids'] ?? [];
+        $now = now();
+
+        try {
+            DB::transaction(function () use ($validated, $orderId, $orderNo, $tableIds, $now): void {
+                DB::table('web_self_orders')->insert([
+                    'id' => $orderId,
+                    'reservation_id' => $validated['reservation_id'] ?? null,
+                    'reservation_number' => $validated['reservation_number'] ?? null,
+                    'order_no' => $orderNo,
+                    'outlet_id' => $validated['outlet_id'],
+                    'outlet_code' => $validated['outlet_code'] ?? null,
+                    'customer_name' => $validated['customer_name'] ?? null,
+                    'customer_phone' => $validated['customer_phone'] ?? null,
+                    'customer_email' => $validated['customer_email'] ?? null,
+                    'order_channel' => $validated['order_channel'] ?? 'self_order_web',
+                    'order_type' => $validated['order_type'] ?? 'dine_in',
+                    'pax' => $validated['pax'] ?? null,
+                    'table_ids_json' => json_encode(array_values($tableIds)),
+                    'notes' => $validated['notes'] ?? null,
+                    'subtotal' => $validated['subtotal'],
+                    'discount' => $validated['discount'] ?? 0,
+                    'cashback' => $validated['cashback'] ?? 0,
+                    'dpp' => $validated['dpp'],
+                    'pb1' => $validated['pb1'],
+                    'service' => $validated['service'],
+                    'grand_total' => $validated['grand_total'],
+                    'commfee' => $validated['commfee'] ?? 0,
+                    'rounding' => $validated['rounding'] ?? 0,
+                    'status' => 'pending_sync',
+                    'paid_status' => 'unpaid',
+                    'sync_attempt_count' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                foreach ($validated['items'] as $idx => $item) {
+                    DB::table('web_self_order_items')->insert([
+                        'id' => (string) Str::ulid(),
+                        'web_self_order_id' => $orderId,
+                        'item_id' => (string) $item['item_id'],
+                        'item_name' => $item['item_name'],
+                        'qty' => $item['qty'],
+                        'price' => $item['price'],
+                        'subtotal' => $item['subtotal'],
+                        'tally' => $item['tally'] ?? null,
+                        'modifiers' => array_key_exists('modifiers', $item) ? json_encode($item['modifiers']) : null,
+                        'notes' => $item['notes'] ?? null,
+                        'b1g1_promo_id' => $item['b1g1_promo_id'] ?? null,
+                        'b1g1_status' => $item['b1g1_status'] ?? null,
+                        'created_at' => $now,
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Self order berhasil disimpan ke staging web.',
+                'data' => [
+                    'id' => $orderId,
+                    'order_no' => $orderNo,
+                ],
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Failed to store self order staging', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan self order ke staging web.',
+            ], 500);
+        }
     }
 
     private function forwardJsonGet(string $path, Request $request, ?array $overrideQuery = null): Response

@@ -20,6 +20,9 @@ Route::prefix('proxy/ymsoft-api')->group(function () {
     Route::post('/self-order/checkout', [ErpSiteProxyController::class, 'checkoutSelfOrder'])
         ->middleware('throttle:erp-proxy-write')
         ->name('erp.proxy.self-order.checkout');
+    Route::post('/self-order/staging', [ErpSiteProxyController::class, 'storeSelfOrderStaging'])
+        ->middleware('throttle:erp-proxy-write')
+        ->name('erp.proxy.self-order.staging');
 });
 
 Route::get('/', [SitePageController::class, 'home'])->name('site.home');
