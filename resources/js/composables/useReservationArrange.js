@@ -56,6 +56,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const orderChannel = ref(null);
     const channelActionLoading = ref(false);
     const savedReservationNumber = ref(null);
+    const savedReservationDp = ref(null);
     const acceptedReservationTerms = ref(false);
     const selfOrderPaymentConfirmed = ref(false);
     const captchaToken = ref('');
@@ -237,6 +238,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         orderChannel.value = null;
         channelActionLoading.value = false;
         savedReservationNumber.value = null;
+        savedReservationDp.value = null;
         acceptedReservationTerms.value = false;
         selfOrderPaymentConfirmed.value = false;
         successInfo.value = null;
@@ -363,6 +365,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
                         ? undefined
                         : String(reservationNumberRaw).trim() || undefined,
                 ) ?? undefined;
+            const reservationDp =
+                data.dp != null && Number.isFinite(Number(data.dp)) ? Number(data.dp) : null;
             if (!reservationNumber) {
                 return {
                     ok: false,
@@ -372,7 +376,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                             : 'Reservation number was not returned by server.',
                 };
             }
-            return { ok: true, id, reservationNumber };
+            return { ok: true, id, reservationNumber, dp: reservationDp };
         } catch {
             return { ok: false, error: t('reservationSubmitFailed') };
         }
@@ -393,10 +397,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
         if (!raw) return base;
         let hash = 0;
         for (let i = 0; i < raw.length; i += 1) {
-            hash = (hash * 31 + raw.charCodeAt(i)) % 1000;
+            hash = (hash * 31 + raw.charCodeAt(i)) % 100;
         }
-        // Keep 3-digit uniqueness and avoid exact base amount.
-        const uniqueCode = hash === 0 ? 123 : hash;
+        const uniqueCode = hash === 0 ? 37 : hash;
         return base + uniqueCode;
     }
 
@@ -511,6 +514,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     savedReservationNumber.value = reservationResult.reservationNumber;
                     reservationNumberForSuccess = reservationResult.reservationNumber;
                 }
+                if (reservationResult.dp != null) {
+                    savedReservationDp.value = Number(reservationResult.dp);
+                }
             }
 
             const subtotal = selfOrderSubtotal.value;
@@ -518,6 +524,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
             const service = 0;
             const dpp = subtotal;
             const grandTotal = dpp + pb1 + service;
+            let stagingWarning = null;
             let checkoutWarning = null;
             let createdOrderNo = null;
 
@@ -554,34 +561,40 @@ export function useReservationArrange(outletsSource, t, langRef) {
             });
 
             if (!stagingResult.ok) {
-                checkoutWarning = stagingResult.message || 'Failed to store self order staging payload.';
-            } else {
-                const orderResult = await checkoutSelfOrder(baseUrl.value, {
-                    menu_book_id: selfOrderMenu.value.menu_book.id,
-                    reservation_number: reservationNumberForSuccess || null,
-                    customer_name: name.value.trim(),
-                    customer_phone: phone.value.trim() || null,
-                    order_type: 'dine_in',
-                    notes: notes.value.trim() || null,
-                    items: selfOrderSelectedItems.value.map((item) => ({
-                        item_id: item.id,
-                        qty: item.qty,
-                        notes: item.notes || null,
-                        modifiers: item.selectedModifiers || {},
-                    })),
-                });
+                stagingWarning =
+                    stagingResult.message || 'Failed to store self order staging payload.';
+            }
 
-                if (!orderResult.ok) {
-                    checkoutWarning = orderResult.message || 'Failed to checkout self order.';
-                } else {
-                    createdOrderNo = orderResult.data?.order_no || null;
-                }
+            const orderResult = await checkoutSelfOrder(baseUrl.value, {
+                menu_book_id: selfOrderMenu.value?.menu_book?.id ?? null,
+                outlet_id: Number(outletId.value),
+                reservation_number: reservationNumberForSuccess || null,
+                customer_name: name.value.trim(),
+                customer_phone: phone.value.trim() || null,
+                order_type: 'dine_in',
+                notes: notes.value.trim() || null,
+                items: selfOrderSelectedItems.value.map((item) => ({
+                    item_id: item.id,
+                    qty: item.qty,
+                    notes: item.notes || null,
+                    modifiers: item.selectedModifiers || {},
+                })),
+            });
+
+            if (!orderResult.ok) {
+                const orderErrorMessage = orderResult.message || 'Failed to checkout self order.';
+                checkoutWarning = orderErrorMessage;
+            } else {
+                createdOrderNo = orderResult.data?.order_no || null;
             }
 
             const finalReservationNumber =
                 normalizeReservationNumber(reservationNumberForSuccess || null) || '-';
             const baseDpAmount = pax.value * 100000;
-            const uniqueDpAmount = buildUniqueDpAmount(baseDpAmount, finalReservationNumber);
+            const uniqueDpAmount =
+                savedReservationDp.value != null
+                    ? Number(savedReservationDp.value)
+                    : buildUniqueDpAmount(baseDpAmount, finalReservationNumber);
             successInfo.value = {
                 reservationNumber: finalReservationNumber,
                 name: name.value.trim() || '-',
@@ -605,8 +618,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
             } else {
                 message.value =
                     langRef.value === 'id'
-                        ? `Pesanan mandiri berhasil dibuat (${createdOrderNo}).`
-                        : `Self order created (${createdOrderNo}).`;
+                        ? `Pesanan mandiri berhasil dibuat (${createdOrderNo}).${stagingWarning ? ' Data staging tidak tersimpan, namun pesanan sudah masuk.' : ''}`
+                        : `Self order created (${createdOrderNo}).${stagingWarning ? ' Staging data was not stored, but the order has been created.' : ''}`;
             }
             selfOrderCart.value = {};
             selfOrderMeta.value = {};
@@ -797,6 +810,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     savedReservationNumber.value = result.reservationNumber;
                     reservationNumberForWa = result.reservationNumber;
                 }
+                if (result.dp != null) {
+                    savedReservationDp.value = Number(result.dp);
+                }
             }
             const opened = handleManualOrderToWhatsApp(reservationNumberForWa, preOpenedWaWindow);
             if (!opened) {
@@ -805,7 +821,10 @@ export function useReservationArrange(outletsSource, t, langRef) {
             const reservationLabel =
                 normalizeReservationNumber(String(reservationNumberForWa || '').trim()) || '-';
             const baseDpAmount = pax.value * 100000;
-            const uniqueDpAmount = buildUniqueDpAmount(baseDpAmount, reservationLabel);
+            const uniqueDpAmount =
+                savedReservationDp.value != null
+                    ? Number(savedReservationDp.value)
+                    : buildUniqueDpAmount(baseDpAmount, reservationLabel);
             successInfo.value = {
                 reservationNumber: reservationLabel,
                 name: name.value.trim() || '-',
@@ -854,6 +873,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
                 if (reservationResult.reservationNumber) {
                     savedReservationNumber.value = reservationResult.reservationNumber;
                 }
+                if (reservationResult.dp != null) {
+                    savedReservationDp.value = Number(reservationResult.dp);
+                }
             }
         } finally {
             isSubmitting.value = false;
@@ -895,6 +917,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const baseReservationDepositAmount = computed(() => pax.value * 100000);
 
     const reservationDepositAmount = computed(() => {
+        if (savedReservationDp.value != null && Number(savedReservationDp.value) > 0) {
+            return Number(savedReservationDp.value);
+        }
         const reservationNumberForDp =
             (successInfo.value?.reservationNumber || savedReservationNumber.value || '').trim();
         return buildUniqueDpAmount(baseReservationDepositAmount.value, reservationNumberForDp);
