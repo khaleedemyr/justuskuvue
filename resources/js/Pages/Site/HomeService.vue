@@ -322,7 +322,7 @@ onBeforeUnmount(() => {
                         <template v-else-if="isDirectVideo(block.video_url)">
                             <div class="absolute inset-0">
                                 <video
-                                    class="h-full w-full bg-black object-contain object-center md:object-cover"
+                                    class="h-full w-full bg-black object-cover object-center"
                                     :src="block.video_url"
                                     autoplay
                                     muted
