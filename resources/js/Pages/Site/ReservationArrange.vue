@@ -1730,18 +1730,28 @@ function handleSuccessQrisError() {
                                         </div>
                                     </div>
                                     <div class="flex flex-col items-center rounded-2xl border border-white/10 bg-[#121215]/80 p-4">
+                                        <p class="text-center text-[11px] font-semibold uppercase tracking-wider text-amber-300/90">
+                                            {{ lang === 'id' ? 'QR Reservasi' : 'Reservation QR' }}
+                                        </p>
                                         <img
                                             v-if="form.successQrUrl"
                                             :src="form.successQrUrl"
                                             alt="Reservation QR"
-                                            class="h-52 w-52 rounded-xl border border-white/10 bg-white p-2"
+                                            class="mt-2 h-52 w-52 rounded-xl border border-white/10 bg-white p-2"
                                         />
                                         <div
                                             v-else
-                                            class="flex h-52 w-52 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-white/45"
+                                            class="mt-2 flex h-52 w-52 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-white/45"
                                         >
                                             QR unavailable
                                         </div>
+                                        <button
+                                            type="button"
+                                            class="mt-3 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                                            @click="form.handleDownloadSuccessQr"
+                                        >
+                                            {{ lang === 'id' ? 'Download QR Reservasi' : 'Download Reservation QR' }}
+                                        </button>
 
                                         <div class="mt-4 w-full rounded-xl border border-white/10 bg-white/[0.04] p-3">
                                             <p class="text-center text-[11px] font-semibold uppercase tracking-wider text-amber-300/90">
@@ -1760,6 +1770,13 @@ function handleSuccessQrisError() {
                                             >
                                                 QRIS unavailable
                                             </div>
+                                            <button
+                                                type="button"
+                                                class="mt-3 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                                                @click="form.handleDownloadPaymentQris"
+                                            >
+                                                {{ lang === 'id' ? 'Download QRIS' : 'Download QRIS' }}
+                                            </button>
                                         </div>
 
                                         <p class="mt-4 text-center text-xs font-semibold uppercase tracking-wider text-amber-300/90">
@@ -1779,13 +1796,6 @@ function handleSuccessQrisError() {
                                                     : 'Please transfer the exact amount above (including the 3 unique digits) for easier payment verification.'
                                             }}
                                         </p>
-                                        <button
-                                            type="button"
-                                            class="mt-4 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                                            @click="form.handleDownloadSuccessQr"
-                                        >
-                                            Download QR Code
-                                        </button>
                                     </div>
                                 </div>
                                 <div class="mt-6 grid gap-3 md:grid-cols-2">
