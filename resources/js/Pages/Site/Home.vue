@@ -424,12 +424,13 @@ onBeforeUnmount(() => {
                         <!-- Mobile strip -->
                         <div
                             class="flex transition-transform duration-500 ease-out md:hidden"
-                            :style="{ transform: `translate3d(-${promoMobileTranslatePx}px, 0, 0)` }"
+                            :style="{ width: `${Math.max(promoViewportWidth * (promoSlidesList.length || 1), promoViewportWidth)}px`, transform: `translate3d(-${promoMobileTranslatePx}px, 0, 0)` }"
                         >
                             <div
                                 v-for="slide in promoSlidesList"
                                 :key="slide.id"
-                                class="min-w-full shrink-0"
+                                class="shrink-0"
+                                :style="{ width: `${promoViewportWidth}px` }"
                             >
                                 <a
                                     v-if="slide.link_url"
