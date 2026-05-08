@@ -51,6 +51,18 @@ const promoStepCount = computed(() => {
     return n;
 });
 
+const promoMobileTranslate = computed(() => {
+    const total = promoSlidesList.value.length;
+    if (total <= 0) return 0;
+    return promoStep.value * (100 / total);
+});
+
+const promoDesktopTranslate = computed(() => {
+    const total = promoDesktopPages.value.length;
+    if (total <= 0) return 0;
+    return promoStep.value * (100 / total);
+});
+
 watch([promoSlidesList, promoStepCount], () => {
     const c = promoStepCount.value;
     if (c === 0) {
@@ -398,7 +410,7 @@ onBeforeUnmount(() => {
                         <!-- Mobile strip -->
                         <div
                             class="flex transition-transform duration-500 ease-out md:hidden"
-                            :style="{ transform: `translateX(-${promoStep * 100}%)` }"
+                            :style="{ transform: `translateX(-${promoMobileTranslate}%)` }"
                         >
                             <div
                                 v-for="slide in promoSlidesList"
@@ -431,7 +443,7 @@ onBeforeUnmount(() => {
                         <!-- Desktop: halaman berisi grid 3 kolom -->
                         <div
                             class="hidden transition-transform duration-500 ease-out md:flex"
-                            :style="{ transform: `translateX(-${promoStep * 100}%)` }"
+                            :style="{ transform: `translateX(-${promoDesktopTranslate}%)` }"
                         >
                             <div
                                 v-for="(page, pageIdx) in promoDesktopPages"

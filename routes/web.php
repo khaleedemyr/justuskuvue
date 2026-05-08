@@ -23,6 +23,9 @@ Route::prefix('proxy/ymsoft-api')->group(function () {
     Route::post('/self-order/staging', [ErpSiteProxyController::class, 'storeSelfOrderStaging'])
         ->middleware('throttle:erp-proxy-write')
         ->name('erp.proxy.self-order.staging');
+    Route::get('/web-profile/qris-image', [ErpSiteProxyController::class, 'paymentQrisImage'])
+        ->middleware('throttle:erp-proxy-general')
+        ->name('erp.proxy.web-profile.qris-image');
 });
 
 Route::get('/', [SitePageController::class, 'home'])->name('site.home');

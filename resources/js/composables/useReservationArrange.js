@@ -970,14 +970,14 @@ export function useReservationArrange(outletsSource, t, langRef) {
     });
 
     const paymentQrisImageUrl = computed(() => {
-        const base = String(erpWebBaseUrl.value || '').replace(/\/$/, '');
+        const base = String(window.location.origin || '').replace(/\/$/, '');
         if (!base) return '';
         const params = new URLSearchParams();
         if (outletId.value) {
             params.set('outlet_id', String(outletId.value));
         }
         const query = params.toString();
-        return `${base}/api/web-profile/qris-image${query ? `?${query}` : ''}`;
+        return `${base}/proxy/ymsoft-api/web-profile/qris-image${query ? `?${query}` : ''}`;
     });
 
     async function handleDownloadPaymentQris() {

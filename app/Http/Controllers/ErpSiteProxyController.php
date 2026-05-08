@@ -191,6 +191,38 @@ class ErpSiteProxyController extends Controller
         return $this->forwardJsonPost('self-order/checkout', $request);
     }
 
+    public function paymentQrisImage(Request $request): Response
+    {
+        $query = [];
+        if ($request->filled('outlet_id')) {
+            $query['outlet_id'] = (int) $request->query('outlet_id');
+        }
+
+        $url = $this->erp->apiBaseUrl().'/web-profile/qris-image';
+
+        try {
+            $response = Http::timeout(30)->get($url, $query);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'Layanan QRIS sedang tidak tersedia.',
+            ], 502);
+        }
+
+        if (! $response->successful()) {
+            return response()->json([
+                'message' => 'Gagal memuat gambar QRIS.',
+            ], $response->status() ?: 500);
+        }
+
+        $contentType = $response->header('Content-Type', 'application/octet-stream');
+        return response($response->body(), 200, [
+            'Content-Type' => $contentType,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
     public function storeSelfOrderStaging(Request $request): Response
     {
         $payload = $request->json()->all() ?: $request->all();
