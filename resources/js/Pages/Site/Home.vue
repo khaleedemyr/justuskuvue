@@ -24,6 +24,8 @@ const brandMenuOpen = ref(false);
 let brandMenuCloseTimer = null;
 const promoStep = ref(0);
 let promoAutoplayTimer = null;
+const promoViewportRef = ref(null);
+const promoViewportWidth = ref(0);
 /** Desktop md+: tampil 3 banner per slide */
 const isDesktopPromoGrid = ref(false);
 let promoMqCleanup = null;
@@ -61,6 +63,11 @@ const promoDesktopTranslate = computed(() => {
     const total = promoDesktopPages.value.length;
     if (total <= 0) return 0;
     return promoStep.value * (100 / total);
+});
+
+const promoMobileTranslatePx = computed(() => {
+    if (promoViewportWidth.value <= 0) return 0;
+    return promoStep.value * promoViewportWidth.value;
 });
 
 watch([promoSlidesList, promoStepCount], () => {
@@ -250,15 +257,21 @@ function syncPromoBreakpoint() {
     isDesktopPromoGrid.value = window.matchMedia('(min-width: 768px)').matches;
 }
 
+function updatePromoViewportWidth() {
+    promoViewportWidth.value = promoViewportRef.value?.clientWidth || 0;
+}
+
 onMounted(() => {
     updatePinned();
     syncPromoBreakpoint();
+    updatePromoViewportWidth();
     const mq = window.matchMedia('(min-width: 768px)');
     mq.addEventListener('change', syncPromoBreakpoint);
     promoMqCleanup = () => mq.removeEventListener('change', syncPromoBreakpoint);
 
     window.addEventListener('scroll', updatePinned, { passive: true });
     window.addEventListener('resize', updatePinned);
+    window.addEventListener('resize', updatePromoViewportWidth);
 
     revealObserver = new IntersectionObserver(
         (entries) => {
@@ -280,6 +293,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', updatePinned);
     window.removeEventListener('resize', updatePinned);
+    window.removeEventListener('resize', updatePromoViewportWidth);
     promoMqCleanup?.();
     promoMqCleanup = null;
     revealObserver?.disconnect();
@@ -406,11 +420,11 @@ onBeforeUnmount(() => {
             <section v-if="promoSlidesList.length > 0" class="relative w-full max-w-none border-y border-white/10 bg-[#1b1b1f]">
                 <!-- Mobile: 1 banner per slide; Desktop md+: 3 banner per slide -->
                 <div class="relative w-full">
-                    <div class="relative overflow-hidden">
+                    <div ref="promoViewportRef" class="relative overflow-hidden">
                         <!-- Mobile strip -->
                         <div
                             class="flex transition-transform duration-500 ease-out md:hidden"
-                            :style="{ transform: `translateX(-${promoMobileTranslate}%)` }"
+                            :style="{ transform: `translate3d(-${promoMobileTranslatePx}px, 0, 0)` }"
                         >
                             <div
                                 v-for="slide in promoSlidesList"
