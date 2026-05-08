@@ -558,6 +558,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
             } else {
                 const orderResult = await checkoutSelfOrder(baseUrl.value, {
                     menu_book_id: selfOrderMenu.value.menu_book.id,
+                    reservation_number: reservationNumberForSuccess || null,
                     customer_name: name.value.trim(),
                     customer_phone: phone.value.trim() || null,
                     order_type: 'dine_in',
