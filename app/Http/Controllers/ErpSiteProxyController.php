@@ -227,6 +227,7 @@ class ErpSiteProxyController extends Controller
             'items.*.subtotal' => 'required|integer|min:0',
             'items.*.tally' => 'nullable|string|max:100',
             'items.*.modifiers' => 'nullable',
+            'items.*.modifiers_named' => 'nullable|array',
             'items.*.notes' => 'nullable|string',
             'items.*.b1g1_promo_id' => 'nullable|integer|min:1',
             'items.*.b1g1_status' => 'nullable|string|max:20',
@@ -284,6 +285,10 @@ class ErpSiteProxyController extends Controller
                 ]);
 
                 foreach ($validated['items'] as $idx => $item) {
+                    $stagingModifiers = array_key_exists('modifiers_named', $item)
+                        ? $item['modifiers_named']
+                        : (array_key_exists('modifiers', $item) ? $item['modifiers'] : null);
+
                     DB::table('web_self_order_items')->insert([
                         'id' => (string) Str::ulid(),
                         'web_self_order_id' => $orderId,
@@ -293,7 +298,7 @@ class ErpSiteProxyController extends Controller
                         'price' => $item['price'],
                         'subtotal' => $item['subtotal'],
                         'tally' => $item['tally'] ?? null,
-                        'modifiers' => array_key_exists('modifiers', $item) ? json_encode($item['modifiers']) : null,
+                        'modifiers' => $stagingModifiers !== null ? json_encode($stagingModifiers) : null,
                         'notes' => $item['notes'] ?? null,
                         'b1g1_promo_id' => $item['b1g1_promo_id'] ?? null,
                         'b1g1_status' => $item['b1g1_status'] ?? null,

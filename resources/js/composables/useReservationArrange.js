@@ -597,7 +597,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     price: item.price || 0,
                     subtotal: (item.price || 0) * (item.qty || 0),
                     tally: null,
-                    modifiers: buildNamedModifiersForStaging(item),
+                    modifiers: item.selectedModifiers || {},
+                    modifiers_named: buildNamedModifiersForStaging(item),
                     notes: item.notes || null,
                 })),
             });
@@ -620,6 +621,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     qty: item.qty,
                     notes: item.notes || null,
                     modifiers: item.selectedModifiers || {},
+                    modifiers_named: buildNamedModifiersForStaging(item),
                 })),
             });
 
