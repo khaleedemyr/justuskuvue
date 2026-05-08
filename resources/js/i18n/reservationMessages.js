@@ -87,12 +87,15 @@ export const reservationEn = {
     reservationDateMustBeFuture: 'Reservation date cannot be in the past.',
     reservationChooseTableTitle: 'Choose Your Table',
     reservationWizardSelfOrderMenu: 'Menu & checkout',
+    reservationPaymentStep: 'Payment',
     reservationSummaryStep: 'Summary',
     reservationSummaryLead: 'Check that everything is correct before you submit.',
+    reservationPaymentLead: 'Review deposit payment instructions before final confirmation.',
     reservationWizardStepPendingChannel: 'Next step',
     reservationSummaryOrderingMethod: 'Ordering method',
     reservationSummaryAreaLabel: 'Seating area',
     reservationSummaryNext: 'Continue to summary',
+    reservationPaymentNext: 'Continue to final confirmation',
     reservationCartGoToSummary: 'Go to summary',
     reservationConfirmSelfOrderSubmit: 'Confirm & submit order',
     reservationSelfOrderNeedItems: 'Add at least one menu item to your cart before continuing.',
@@ -102,6 +105,16 @@ export const reservationEn = {
         'I have read and agree to the Terms & Conditions.',
     reservationTermsRequired:
         'Please confirm that you have read the Terms & Conditions.',
+    reservationPaymentReviewTitle: 'Payment review',
+    reservationPaymentReviewHint:
+        'Please review the deposit amount and QRIS payment section before continuing.',
+    reservationPaymentReviewCheckbox:
+        'I have reviewed the payment instructions and QRIS section.',
+    reservationPaymentReviewRequired:
+        'Please review the payment section before continuing.',
+    reservationPaymentAmountNote:
+        'The exact transfer amount with unique digits will be shown again after the reservation is successfully created.',
+    reservationPaymentQrisLabel: 'QRIS payment',
     reservationTermsItem1:
         'Guests are required to arrive 15 minutes prior to their reservation time.',
     reservationTermsItem2:
@@ -247,12 +260,15 @@ export const reservationId = {
     reservationDateMustBeFuture: 'Tanggal reservasi tidak boleh di masa lalu.',
     reservationChooseTableTitle: 'Pilih Meja',
     reservationWizardSelfOrderMenu: 'Menu & bayar',
+    reservationPaymentStep: 'Pembayaran',
     reservationSummaryStep: 'Ringkasan',
     reservationSummaryLead: 'Pastikan data sudah benar sebelum mengirim.',
+    reservationPaymentLead: 'Tinjau instruksi pembayaran deposit sebelum konfirmasi final.',
     reservationWizardStepPendingChannel: 'Langkah berikutnya',
     reservationSummaryOrderingMethod: 'Cara order',
     reservationSummaryAreaLabel: 'Area tempat duduk',
     reservationSummaryNext: 'Lanjut ke ringkasan',
+    reservationPaymentNext: 'Lanjut ke konfirmasi final',
     reservationCartGoToSummary: 'Ke ringkasan',
     reservationConfirmSelfOrderSubmit: 'Konfirmasi & kirim pesanan',
     reservationSelfOrderNeedItems:
@@ -263,6 +279,16 @@ export const reservationId = {
         'Saya sudah membaca dan menyetujui Syarat & Ketentuan.',
     reservationTermsRequired:
         'Harap centang bahwa Anda sudah membaca Syarat & Ketentuan.',
+    reservationPaymentReviewTitle: 'Review pembayaran',
+    reservationPaymentReviewHint:
+        'Silakan cek nominal deposit dan bagian pembayaran QRIS sebelum melanjutkan.',
+    reservationPaymentReviewCheckbox:
+        'Saya sudah meninjau instruksi pembayaran dan bagian QRIS.',
+    reservationPaymentReviewRequired:
+        'Silakan tinjau bagian pembayaran terlebih dahulu.',
+    reservationPaymentAmountNote:
+        'Nominal transfer final dengan 3 digit unik akan ditampilkan lagi setelah reservasi berhasil dibuat.',
+    reservationPaymentQrisLabel: 'Pembayaran QRIS',
     reservationTermsItem1: 'Tamu wajib tiba 15 menit sebelum jam reservasi.',
     reservationTermsItem2:
         'Perubahan jumlah tamu harus diinformasikan lebih dulu melalui Customer Service kami.',

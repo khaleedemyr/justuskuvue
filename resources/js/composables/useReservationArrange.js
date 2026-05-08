@@ -57,6 +57,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const channelActionLoading = ref(false);
     const savedReservationNumber = ref(null);
     const acceptedReservationTerms = ref(false);
+    const selfOrderPaymentConfirmed = ref(false);
     const captchaToken = ref('');
     const formStartedAt = ref(Math.floor(Date.now() / 1000));
     const honeypot = ref('');
@@ -125,7 +126,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         if (wizardStep.value === 4 && orderChannel.value === 'manual') {
             acceptedReservationTerms.value = false;
         }
-        if (wizardStep.value === 5 && orderChannel.value === 'self') {
+        if (wizardStep.value === 6 && orderChannel.value === 'self') {
             acceptedReservationTerms.value = false;
         }
     });
@@ -237,6 +238,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         channelActionLoading.value = false;
         savedReservationNumber.value = null;
         acceptedReservationTerms.value = false;
+        selfOrderPaymentConfirmed.value = false;
         successInfo.value = null;
         honeypot.value = '';
         formStartedAt.value = Math.floor(Date.now() / 1000);
@@ -824,6 +826,19 @@ export function useReservationArrange(outletsSource, t, langRef) {
         wizardStep.value = 5;
     }
 
+    function handleGoToSelfFinalConfirmation() {
+        submitError.value = null;
+        if (selfOrderSelectedItems.value.length === 0) {
+            submitError.value = t('reservationSelfOrderNeedItems');
+            return;
+        }
+        if (!selfOrderPaymentConfirmed.value) {
+            submitError.value = t('reservationPaymentReviewRequired');
+            return;
+        }
+        wizardStep.value = 6;
+    }
+
     const wizardStepsMeta = computed(() => {
         langRef.value;
         const base = [
@@ -838,7 +853,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
             return [
                 ...base,
                 { id: 4, label: t('reservationWizardSelfOrderMenu') },
-                { id: 5, label: t('reservationSummaryStep') },
+                { id: 5, label: t('reservationPaymentStep') },
+                { id: 6, label: t('reservationSummaryStep') },
             ];
         }
         return [...base, { id: 4, label: t('reservationWizardStepPendingChannel') }];
@@ -860,6 +876,11 @@ export function useReservationArrange(outletsSource, t, langRef) {
         const reservationNumberForDp =
             (successInfo.value?.reservationNumber || savedReservationNumber.value || '').trim();
         return buildUniqueDpAmount(baseReservationDepositAmount.value, reservationNumberForDp);
+    });
+
+    const paymentQrisImageUrl = computed(() => {
+        const base = String(erpWebBaseUrl.value || '').replace(/\/$/, '');
+        return base ? `${base}/api/web-profile/qris-image` : '';
     });
 
     const successQrPayload = computed(() => successInfo.value?.reservationNumber || '');
@@ -956,6 +977,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
         channelActionLoading,
         savedReservationNumber,
         acceptedReservationTerms,
+        selfOrderPaymentConfirmed,
         captchaToken,
         formStartedAt,
         honeypot,
@@ -1014,11 +1036,13 @@ export function useReservationArrange(outletsSource, t, langRef) {
         handleAdvanceFromStep3,
         handleManualSubmitFromSummary,
         handleGoToSelfSummaryFromMenu,
+        handleGoToSelfFinalConfirmation,
         wizardStepsMeta,
         tableNamesSummary,
         smokingSummaryLabel,
         baseReservationDepositAmount,
         reservationDepositAmount,
+        paymentQrisImageUrl,
         successQrUrl,
         handleDownloadSuccessQr,
         reservationTermKeys,

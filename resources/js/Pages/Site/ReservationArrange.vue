@@ -1,7 +1,7 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { toRef, computed, onMounted } from 'vue';
+import { toRef, computed, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 import { useReservationArrange } from '@/composables/useReservationArrange';
@@ -16,6 +16,7 @@ const props = defineProps({
 const { t, lang } = useSiteI18n();
 const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
 const page = usePage();
+const paymentQrisLoadFailed = ref(false);
 const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
 
 function loadRecaptchaScript() {
@@ -63,6 +64,10 @@ async function handleSelfSubmitWithCaptcha() {
 onMounted(() => {
     loadRecaptchaScript();
 });
+
+function handlePaymentQrisError() {
+    paymentQrisLoadFailed.value = true;
+}
 </script>
 
 <template>
@@ -1262,7 +1267,7 @@ onMounted(() => {
                                     </div>
                                 </div>
 
-                                <!-- Self summary step 5 -->
+                                <!-- Self payment step 5 -->
                                 <div v-if="form.wizardStep === 5 && form.orderChannel === 'self'" class="space-y-6">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
                                         <button
@@ -1275,10 +1280,10 @@ onMounted(() => {
                                     </div>
                                     <div class="rounded-2xl border border-amber-400/25 bg-amber-500/[0.08] p-6 md:p-8">
                                         <h3 class="font-montserrat text-lg font-medium text-white md:text-xl">
-                                            {{ t('reservationSummaryStep') }}
+                                            {{ t('reservationPaymentReviewTitle') }}
                                         </h3>
                                         <p class="mt-2 text-sm leading-relaxed text-amber-100/75">
-                                            {{ t('reservationSummaryLead') }}
+                                            {{ t('reservationPaymentLead') }}
                                         </p>
                                         <div class="mt-6 rounded-xl border border-white/10 bg-[#121215]/80 px-4 py-2">
                                             <div
@@ -1381,6 +1386,79 @@ onMounted(() => {
                                                 >
                                             </div>
                                         </div>
+                                        <div class="mt-6 grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                                            <div class="rounded-2xl border border-amber-400/20 bg-black/20 p-4">
+                                                <p class="font-montserrat text-xs font-medium uppercase tracking-widest text-amber-400/90">
+                                                    {{ t('reservationPaymentQrisLabel') }}
+                                                </p>
+                                                <div class="mt-4 flex min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-4">
+                                                    <img
+                                                        v-if="form.paymentQrisImageUrl && !paymentQrisLoadFailed"
+                                                        :src="form.paymentQrisImageUrl"
+                                                        alt="QRIS Payment"
+                                                        class="max-h-64 w-auto max-w-full rounded-xl object-contain"
+                                                        @error="handlePaymentQrisError"
+                                                    />
+                                                    <p v-else class="max-w-xs text-center text-sm leading-relaxed text-white/45">
+                                                        {{ t('reservationPaymentReviewHint') }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="rounded-2xl border border-amber-400/20 bg-amber-500/[0.08] p-4">
+                                                <p class="text-xs font-semibold uppercase tracking-widest text-amber-300/90">
+                                                    {{ t('reservationDeposit') }}
+                                                </p>
+                                                <p class="mt-3 text-3xl font-semibold text-amber-100">
+                                                    {{ form.formatCurrency(form.baseReservationDepositAmount) }}
+                                                </p>
+                                                <p class="mt-3 text-sm leading-relaxed text-white/65">
+                                                    {{ t('reservationPaymentAmountNote') }}
+                                                </p>
+                                                <label
+                                                    class="mt-5 flex cursor-pointer gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-3"
+                                                >
+                                                    <input
+                                                        v-model="form.selfOrderPaymentConfirmed"
+                                                        type="checkbox"
+                                                        class="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
+                                                    />
+                                                    <span class="text-sm leading-snug text-white/85">
+                                                        {{ t('reservationPaymentReviewCheckbox') }}
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mt-8 flex justify-end">
+                                            <button
+                                                type="button"
+                                                :disabled="!form.selfOrderPaymentConfirmed"
+                                                class="rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 px-8 py-3.5 text-sm font-semibold uppercase tracking-widest text-zinc-900 shadow-lg shadow-amber-900/30 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                                                @click="form.handleGoToSelfFinalConfirmation"
+                                            >
+                                                {{ t('reservationPaymentNext') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Self final confirmation step 6 -->
+                                <div v-if="form.wizardStep === 6 && form.orderChannel === 'self'" class="space-y-6">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <button
+                                            type="button"
+                                            class="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-white/80 transition hover:bg-white/[0.04]"
+                                            @click="form.wizardStep = 5"
+                                        >
+                                            {{ t('reservationBack') }}
+                                        </button>
+                                    </div>
+                                    <div class="rounded-2xl border border-amber-400/25 bg-amber-500/[0.08] p-6 md:p-8">
+                                        <h3 class="font-montserrat text-lg font-medium text-white md:text-xl">
+                                            {{ t('reservationSummaryStep') }}
+                                        </h3>
+                                        <p class="mt-2 text-sm leading-relaxed text-amber-100/75">
+                                            {{ t('reservationSummaryLead') }}
+                                        </p>
                                         <div class="mt-8">
                                             <p
                                                 class="font-montserrat text-xs font-medium uppercase tracking-widest text-amber-400/90"
@@ -1473,6 +1551,7 @@ onMounted(() => {
                                             :disabled="
                                                 form.isSubmitting ||
                                                 form.selfOrderSelectedItems.length === 0 ||
+                                                !form.selfOrderPaymentConfirmed ||
                                                 !form.acceptedReservationTerms
                                             "
                                             class="mt-8 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 py-4 text-sm font-semibold uppercase tracking-widest text-zinc-900 shadow-lg shadow-amber-900/30 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
