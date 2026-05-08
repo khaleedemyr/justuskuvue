@@ -1442,49 +1442,12 @@ function handlePaymentQrisError() {
                                                 }}</span>
                                             </div>
                                         </div>
-                                        <div class="mt-6 rounded-xl border border-amber-400/20 bg-amber-500/[0.08] px-4 py-4">
-                                            <p class="font-montserrat text-sm font-semibold uppercase tracking-wide text-white/90">
-                                                {{ t('reservationTermsTitle') }}
-                                            </p>
-                                            <div
-                                                class="scrollbar-dark mt-3 max-h-[min(14rem,35vh)] overflow-y-auto overscroll-contain pr-1"
-                                            >
-                                                <ol
-                                                    class="list-decimal space-y-2.5 pl-4 text-sm leading-relaxed text-white/70 marker:text-amber-400/80"
-                                                >
-                                                    <li v-for="key in form.reservationTermKeys" :key="key + '-s'">
-                                                        {{ t(key) }}
-                                                    </li>
-                                                </ol>
-                                            </div>
-                                            <label
-                                                class="mt-4 flex cursor-pointer gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-3"
-                                            >
-                                                <input
-                                                    v-model="form.acceptedReservationTerms"
-                                                    type="checkbox"
-                                                    class="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
-                                                />
-                                                <span class="text-sm leading-snug text-white/85">{{
-                                                    t('reservationTermsCheckbox')
-                                                }}</span>
-                                            </label>
-                                            <input
-                                                v-model="form.honeypot"
-                                                type="text"
-                                                autocomplete="off"
-                                                tabindex="-1"
-                                                class="hidden"
-                                                aria-hidden="true"
-                                            />
-                                        </div>
                                         <div class="mt-8 flex justify-end">
                                             <button
                                                 type="button"
                                                 :disabled="
                                                     form.isSubmitting ||
-                                                    form.selfOrderSelectedItems.length === 0 ||
-                                                    !form.acceptedReservationTerms
+                                                    form.selfOrderSelectedItems.length === 0
                                                 "
                                                 class="rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 px-8 py-3.5 text-sm font-semibold uppercase tracking-widest text-zinc-900 shadow-lg shadow-amber-900/30 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                                                 @click="handleSelfProceedToPaymentWithCaptcha"
@@ -1567,11 +1530,48 @@ function handlePaymentQrisError() {
                                                 </label>
                                             </div>
                                         </div>
+                                        <div class="mt-6 rounded-xl border border-amber-400/20 bg-amber-500/[0.08] px-4 py-4">
+                                            <p class="font-montserrat text-sm font-semibold uppercase tracking-wide text-white/90">
+                                                {{ t('reservationTermsTitle') }}
+                                            </p>
+                                            <div
+                                                class="scrollbar-dark mt-3 max-h-[min(14rem,35vh)] overflow-y-auto overscroll-contain pr-1"
+                                            >
+                                                <ol
+                                                    class="list-decimal space-y-2.5 pl-4 text-sm leading-relaxed text-white/70 marker:text-amber-400/80"
+                                                >
+                                                    <li v-for="key in form.reservationTermKeys" :key="key + '-s'">
+                                                        {{ t(key) }}
+                                                    </li>
+                                                </ol>
+                                            </div>
+                                            <label
+                                                class="mt-4 flex cursor-pointer gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-3"
+                                            >
+                                                <input
+                                                    v-model="form.acceptedReservationTerms"
+                                                    type="checkbox"
+                                                    class="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
+                                                />
+                                                <span class="text-sm leading-snug text-white/85">{{
+                                                    t('reservationTermsCheckbox')
+                                                }}</span>
+                                            </label>
+                                            <input
+                                                v-model="form.honeypot"
+                                                type="text"
+                                                autocomplete="off"
+                                                tabindex="-1"
+                                                class="hidden"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
                                         <button
                                             type="button"
                                             :disabled="
                                                 form.isSubmitting ||
                                                 !form.selfOrderPaymentConfirmed ||
+                                                !form.acceptedReservationTerms ||
                                                 form.selfOrderSelectedItems.length === 0
                                             "
                                             class="mt-8 w-full rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 py-4 text-sm font-semibold uppercase tracking-widest text-zinc-900 shadow-lg shadow-amber-900/30 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"

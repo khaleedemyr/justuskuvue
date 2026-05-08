@@ -832,10 +832,6 @@ export function useReservationArrange(outletsSource, t, langRef) {
             submitError.value = t('reservationSelfOrderNeedItems');
             return;
         }
-        if (!acceptedReservationTerms.value) {
-            submitError.value = t('reservationTermsRequired');
-            return;
-        }
         isSubmitting.value = true;
         try {
             if (!reservationCreated.value) {
