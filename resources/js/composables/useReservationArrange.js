@@ -463,6 +463,30 @@ export function useReservationArrange(outletsSource, t, langRef) {
         return lines;
     }
 
+    function buildNamedModifiersForStaging(item) {
+        const selected = item.selectedModifiers || {};
+        if (!item.modifiers || item.modifiers.length === 0) return {};
+
+        const namedModifiers = {};
+        for (const group of item.modifiers) {
+            const picked = selected[group.modifier_id] || {};
+            const groupEntries = {};
+
+            for (const option of group.options || []) {
+                const qty = Number(picked[option.id] || 0);
+                if (qty > 0) {
+                    groupEntries[option.name] = qty;
+                }
+            }
+
+            if (Object.keys(groupEntries).length > 0) {
+                namedModifiers[group.modifier_name] = groupEntries;
+            }
+        }
+
+        return namedModifiers;
+    }
+
     async function openSelfOrder() {
         if (!name.value.trim() || !phone.value.trim() || !isSelectionValid.value || !outletId.value) {
             submitError.value = t('reservationFillAvailabilityFirst');
@@ -573,7 +597,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
                     price: item.price || 0,
                     subtotal: (item.price || 0) * (item.qty || 0),
                     tally: null,
-                    modifiers: item.selectedModifiers || {},
+                    modifiers: buildNamedModifiersForStaging(item),
                     notes: item.notes || null,
                 })),
             });
