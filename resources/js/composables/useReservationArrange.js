@@ -422,6 +422,24 @@ export function useReservationArrange(outletsSource, t, langRef) {
         ),
     );
 
+    function roundRupiah(value) {
+        const num = Number(value || 0);
+        if (!Number.isFinite(num)) return 0;
+        return Math.round(num);
+    }
+
+    const selfOrderServiceCharge = computed(() => roundRupiah(selfOrderSubtotal.value * 0.05));
+
+    // DPP mengikuti requirement: total + service dulu.
+    const selfOrderDpp = computed(() => roundRupiah(selfOrderSubtotal.value + selfOrderServiceCharge.value));
+
+    // PB1 10% dihitung dari DPP (subtotal + service).
+    const selfOrderPb1 = computed(() => roundRupiah(selfOrderDpp.value * 0.10));
+
+    const selfOrderGrandTotal = computed(() =>
+        roundRupiah(selfOrderDpp.value + selfOrderPb1.value),
+    );
+
     const selfOrderTotalQty = computed(() =>
         selfOrderSelectedItems.value.reduce((sum, item) => sum + (item.qty || 0), 0),
     );
@@ -520,10 +538,10 @@ export function useReservationArrange(outletsSource, t, langRef) {
             }
 
             const subtotal = selfOrderSubtotal.value;
-            const pb1 = 0;
-            const service = 0;
-            const dpp = subtotal;
-            const grandTotal = dpp + pb1 + service;
+            const service = selfOrderServiceCharge.value;
+            const dpp = selfOrderDpp.value;
+            const pb1 = selfOrderPb1.value;
+            const grandTotal = selfOrderGrandTotal.value;
             let stagingWarning = null;
             let checkoutWarning = null;
             let createdOrderNo = null;
@@ -1096,6 +1114,10 @@ export function useReservationArrange(outletsSource, t, langRef) {
         formatCurrency,
         selfOrderSelectedItems,
         selfOrderSubtotal,
+        selfOrderServiceCharge,
+        selfOrderDpp,
+        selfOrderPb1,
+        selfOrderGrandTotal,
         selfOrderTotalQty,
         getModifierSummary,
         openSelfOrder,

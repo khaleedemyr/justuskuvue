@@ -17,6 +17,7 @@ const { t, lang } = useSiteI18n();
 const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
 const page = usePage();
 const paymentQrisLoadFailed = ref(false);
+const successQrisLoadFailed = ref(false);
 const recaptchaSiteKey = computed(() => String(page.props.reservationRecaptchaSiteKey || '').trim());
 
 function loadRecaptchaScript() {
@@ -72,6 +73,10 @@ onMounted(() => {
 
 function handlePaymentQrisError() {
     paymentQrisLoadFailed.value = true;
+}
+
+function handleSuccessQrisError() {
+    successQrisLoadFailed.value = true;
 }
 </script>
 
@@ -1438,8 +1443,30 @@ function handlePaymentQrisError() {
                                                     }}
                                                 </span>
                                                 <span class="text-base font-bold text-amber-100">{{
-                                                    form.formatCurrency(form.selfOrderSubtotal)
+                                                    form.formatCurrency(form.selfOrderGrandTotal)
                                                 }}</span>
+                                            </div>
+                                            <div class="mt-3 space-y-1 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm">
+                                                <div class="flex items-center justify-between gap-3 text-white/75">
+                                                    <span>Subtotal</span>
+                                                    <span>{{ form.formatCurrency(form.selfOrderSubtotal) }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between gap-3 text-white/75">
+                                                    <span>Service 5%</span>
+                                                    <span>{{ form.formatCurrency(form.selfOrderServiceCharge) }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between gap-3 text-white/75">
+                                                    <span>DPP (Subtotal + Service)</span>
+                                                    <span>{{ form.formatCurrency(form.selfOrderDpp) }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between gap-3 text-white/75">
+                                                    <span>PB1 10%</span>
+                                                    <span>{{ form.formatCurrency(form.selfOrderPb1) }}</span>
+                                                </div>
+                                                <div class="mt-1 flex items-center justify-between gap-3 border-t border-white/10 pt-2 font-semibold text-amber-100">
+                                                    <span>Total Bayar</span>
+                                                    <span>{{ form.formatCurrency(form.selfOrderGrandTotal) }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="mt-8 flex justify-end">
@@ -1510,6 +1537,28 @@ function handlePaymentQrisError() {
                                                 <p class="mt-3 text-3xl font-semibold text-amber-100">
                                                     {{ form.formatCurrency(form.reservationDepositAmount) }}
                                                 </p>
+                                                <div class="mt-4 space-y-1 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm">
+                                                    <div class="flex items-center justify-between gap-3 text-white/75">
+                                                        <span>Subtotal</span>
+                                                        <span>{{ form.formatCurrency(form.selfOrderSubtotal) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-3 text-white/75">
+                                                        <span>Service 5%</span>
+                                                        <span>{{ form.formatCurrency(form.selfOrderServiceCharge) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-3 text-white/75">
+                                                        <span>DPP (Subtotal + Service)</span>
+                                                        <span>{{ form.formatCurrency(form.selfOrderDpp) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-3 text-white/75">
+                                                        <span>PB1 10%</span>
+                                                        <span>{{ form.formatCurrency(form.selfOrderPb1) }}</span>
+                                                    </div>
+                                                    <div class="mt-1 flex items-center justify-between gap-3 border-t border-white/10 pt-2 font-semibold text-amber-100">
+                                                        <span>Total Self Order</span>
+                                                        <span>{{ form.formatCurrency(form.selfOrderGrandTotal) }}</span>
+                                                    </div>
+                                                </div>
                                                 <p class="mt-2 text-xs font-medium tracking-wide text-amber-300/80">
                                                     {{ form.savedReservationNumber || '-' }}
                                                 </p>
@@ -1693,6 +1742,26 @@ function handlePaymentQrisError() {
                                         >
                                             QR unavailable
                                         </div>
+
+                                        <div class="mt-4 w-full rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                                            <p class="text-center text-[11px] font-semibold uppercase tracking-wider text-amber-300/90">
+                                                {{ t('reservationPaymentQrisLabel') }}
+                                            </p>
+                                            <img
+                                                v-if="form.paymentQrisImageUrl && !successQrisLoadFailed"
+                                                :src="form.paymentQrisImageUrl"
+                                                alt="QRIS Payment"
+                                                class="mx-auto mt-2 h-48 w-48 rounded-lg border border-white/10 bg-white object-contain p-2"
+                                                @error="handleSuccessQrisError"
+                                            />
+                                            <div
+                                                v-else
+                                                class="mx-auto mt-2 flex h-48 w-48 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-center text-xs text-white/45"
+                                            >
+                                                QRIS unavailable
+                                            </div>
+                                        </div>
+
                                         <p class="mt-4 text-center text-xs font-semibold uppercase tracking-wider text-amber-300/90">
                                             {{ lang === 'id' ? 'Nominal transfer DP' : 'DP transfer amount' }}
                                         </p>
@@ -1931,12 +2000,30 @@ function handlePaymentQrisError() {
                         </button>
                     </div>
                     <div class="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                        <p class="text-sm font-semibold">
+                        <div class="text-sm font-semibold">
                             {{ form.selfOrderTotalQty }} qty ({{ form.selfOrderSelectedItems.length }} item)
-                        </p>
+                        </div>
                         <p class="text-sm font-bold text-amber-200/90">
-                            {{ form.formatCurrency(form.selfOrderSubtotal) }}
+                            {{ form.formatCurrency(form.selfOrderGrandTotal) }}
                         </p>
+                    </div>
+                    <div class="mt-2 space-y-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white/75">
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Subtotal</span>
+                            <span>{{ form.formatCurrency(form.selfOrderSubtotal) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Service 5%</span>
+                            <span>{{ form.formatCurrency(form.selfOrderServiceCharge) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>DPP</span>
+                            <span>{{ form.formatCurrency(form.selfOrderDpp) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>PB1 10%</span>
+                            <span>{{ form.formatCurrency(form.selfOrderPb1) }}</span>
+                        </div>
                     </div>
                     <div class="mt-4 grid grid-cols-2 gap-2">
                         <button
