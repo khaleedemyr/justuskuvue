@@ -111,6 +111,21 @@ export function useReservationArrange(outletsSource, t, langRef) {
 
     const canGoToStep2 = computed(() => String(outletId.value).trim().length > 0);
 
+    /** Menu & sold-out di-cache per outlet; pastikan ganti outlet tidak menampilkan SO outlet lain. */
+    watch(outletId, (to, from) => {
+        if (String(to ?? '') === String(from ?? '')) {
+            return;
+        }
+        selfOrderMenu.value = null;
+        selfOrderMenuOutletId.value = null;
+        selfOrderSoldOutItemIds.value = new Set();
+        selfOrderSoldOutModifierOptionIds.value = new Set();
+        selfOrderCart.value = {};
+        selfOrderMeta.value = {};
+        selfOrderSearch.value = '';
+        selfOrderCategoryId.value = null;
+    });
+
     watch(date, () => {
         if (!date.value) {
             time.value = '';
