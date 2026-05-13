@@ -79,6 +79,11 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const detailQty = ref(1);
     const detailNotes = ref('');
     const detailSelectedModifiers = ref({});
+    /** Saat item sold out: batas atas qty = qty di keranjang saat modal dibuka (boleh dikurangi saja). */
+    const detailSoldOutMaxQty = ref(null);
+
+    const selfOrderSoldOutItemIds = ref(new Set());
+    const selfOrderSoldOutModifierOptionIds = ref(new Set());
 
     const dateStripRef = ref(null);
     const checkingAvailability = ref(false);
@@ -234,6 +239,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
         selfOrderCategoryId.value = null;
         viewCartOpen.value = false;
         detailItemId.value = null;
+        detailSoldOutMaxQty.value = null;
+        selfOrderSoldOutItemIds.value = new Set();
+        selfOrderSoldOutModifierOptionIds.value = new Set();
         tableLayoutNotes.value = '';
         orderChannel.value = null;
         channelActionLoading.value = false;
@@ -504,6 +512,14 @@ export function useReservationArrange(outletsSource, t, langRef) {
             }
             selfOrderMenu.value = result.data;
             selfOrderMenuOutletId.value = outletNumber;
+            const rawSoItems = Array.isArray(result.data?.sold_out_item_ids)
+                ? result.data.sold_out_item_ids
+                : [];
+            const rawSoMods = Array.isArray(result.data?.sold_out_modifier_option_ids)
+                ? result.data.sold_out_modifier_option_ids
+                : [];
+            selfOrderSoldOutItemIds.value = new Set(rawSoItems.map((id) => Number(id)));
+            selfOrderSoldOutModifierOptionIds.value = new Set(rawSoMods.map((id) => Number(id)));
             selfOrderCart.value = {};
             selfOrderMeta.value = {};
             selfOrderSearch.value = '';
@@ -676,33 +692,86 @@ export function useReservationArrange(outletsSource, t, langRef) {
         () => selfOrderMenu.value?.items.find((item) => item.id === detailItemId.value) ?? null,
     );
 
+    function isSelfOrderItemSoldOut(itemId) {
+        return selfOrderSoldOutItemIds.value.has(Number(itemId));
+    }
+
+    function isSelfOrderModifierOptionSoldOut(optionId) {
+        return selfOrderSoldOutModifierOptionIds.value.has(Number(optionId));
+    }
+
+    function tryOpenSelfOrderItemDetail(itemId) {
+        if (
+            isSelfOrderItemSoldOut(itemId) &&
+            (selfOrderCart.value[itemId] ?? 0) <= 0
+        ) {
+            return;
+        }
+        openItemDetail(itemId);
+    }
+
+    function pruneSoldOutModifiersFromSelection(sel) {
+        const next = {};
+        for (const [modId, opts] of Object.entries(sel || {})) {
+            const o = {};
+            for (const [optId, q] of Object.entries(opts || {})) {
+                if (!isSelfOrderModifierOptionSoldOut(Number(optId))) {
+                    o[optId] = q;
+                }
+            }
+            if (Object.keys(o).length) {
+                next[modId] = o;
+            }
+        }
+        return next;
+    }
+
     function openItemDetail(itemId) {
         const qty = selfOrderCart.value[itemId] ?? 0;
         const meta = selfOrderMeta.value[itemId] ?? {};
+        const soldOut = isSelfOrderItemSoldOut(itemId);
+        detailSoldOutMaxQty.value = soldOut ? qty : null;
         detailItemId.value = itemId;
-        detailQty.value = qty > 0 ? qty : 1;
+        detailQty.value = soldOut ? qty : qty > 0 ? qty : 1;
         detailNotes.value = meta.notes ?? '';
         detailSelectedModifiers.value = { ...(meta.selectedModifiers ?? {}) };
     }
 
     function saveItemDetail() {
         if (!detailItemId.value) return;
-        const qty = Math.max(0, Math.min(99, detailQty.value));
+        let qty = Math.max(0, Math.min(99, detailQty.value));
+        const id = detailItemId.value;
+        if (detailSoldOutMaxQty.value != null) {
+            qty = Math.min(qty, detailSoldOutMaxQty.value);
+        }
+        const mods = pruneSoldOutModifiersFromSelection(detailSelectedModifiers.value);
         selfOrderCart.value = {
             ...selfOrderCart.value,
-            [detailItemId.value]: qty,
+            [id]: qty,
         };
         selfOrderMeta.value = {
             ...selfOrderMeta.value,
-            [detailItemId.value]: {
+            [id]: {
                 notes: detailNotes.value.trim(),
-                selectedModifiers: detailSelectedModifiers.value,
+                selectedModifiers: mods,
             },
         };
         detailItemId.value = null;
+        detailSoldOutMaxQty.value = null;
+    }
+
+    function closeItemDetailWithoutSave() {
+        detailItemId.value = null;
+        detailSoldOutMaxQty.value = null;
     }
 
     function handleToggleDetailModifier(modifierId, optionId) {
+        if (
+            isSelfOrderModifierOptionSoldOut(optionId) &&
+            !detailSelectedModifiers.value[modifierId]?.[optionId]
+        ) {
+            return;
+        }
         const prev = detailSelectedModifiers.value;
         const modifierOptions = { ...(prev[modifierId] || {}) };
         if (modifierOptions[optionId]) {
@@ -730,6 +799,9 @@ export function useReservationArrange(outletsSource, t, langRef) {
     }
 
     function handleDetailModifierQty(modifierId, optionId, delta) {
+        if (delta > 0 && isSelfOrderModifierOptionSoldOut(optionId)) {
+            return;
+        }
         const prev = detailSelectedModifiers.value;
         const modifierOptions = { ...(prev[modifierId] || {}) };
         const currentQty = Number(modifierOptions[optionId] || 0);
@@ -1156,8 +1228,13 @@ export function useReservationArrange(outletsSource, t, langRef) {
         selfOrderFilteredItems,
         handleSubmitSelfOrder,
         detailItem,
+        detailSoldOutMaxQty,
         openItemDetail,
+        tryOpenSelfOrderItemDetail,
+        isSelfOrderItemSoldOut,
+        isSelfOrderModifierOptionSoldOut,
         saveItemDetail,
+        closeItemDetailWithoutSave,
         handleToggleDetailModifier,
         handleDetailModifierQty,
         handleAdvanceFromStep3,

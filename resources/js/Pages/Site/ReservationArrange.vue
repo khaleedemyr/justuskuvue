@@ -1175,12 +1175,28 @@ function handleSuccessQrisError() {
                                                     <div
                                                         v-for="item in form.selfOrderFilteredItems"
                                                         :key="item.id"
-                                                        class="rounded-xl border border-white/10 bg-white/[0.04] p-3"
+                                                        class="relative rounded-xl border border-white/10 bg-white/[0.04] p-3"
+                                                        :class="
+                                                            form.isSelfOrderItemSoldOut(item.id) &&
+                                                            (form.selfOrderCart[item.id] ?? 0) <= 0
+                                                                ? 'opacity-55'
+                                                                : ''
+                                                        "
                                                     >
+                                                        <span
+                                                            v-if="form.isSelfOrderItemSoldOut(item.id)"
+                                                            class="pointer-events-none absolute right-2 top-2 z-[1] inline-flex min-h-[1.25rem] min-w-[1.75rem] items-center justify-center rounded bg-rose-600 px-1 text-[10px] font-black leading-none text-white shadow-sm ring-1 ring-rose-900/40"
+                                                        >
+                                                            SO
+                                                        </span>
                                                         <button
                                                             type="button"
                                                             class="flex w-full min-w-0 items-start gap-3 text-left"
-                                                            @click="form.openItemDetail(item.id)"
+                                                            :disabled="
+                                                                form.isSelfOrderItemSoldOut(item.id) &&
+                                                                (form.selfOrderCart[item.id] ?? 0) <= 0
+                                                            "
+                                                            @click="form.tryOpenSelfOrderItemDetail(item.id)"
                                                         >
                                                             <span
                                                                 v-if="
@@ -1845,9 +1861,17 @@ function handleSuccessQrisError() {
                 aria-modal="true"
             >
                 <div class="shrink-0 border-b border-white/10 px-5 pb-4 pt-5">
-                    <h5 id="reservation-item-detail-title" class="text-base font-bold uppercase leading-snug">
-                        {{ form.detailItem.name }}
-                    </h5>
+                    <div class="flex flex-wrap items-start gap-2">
+                        <h5 id="reservation-item-detail-title" class="text-base font-bold uppercase leading-snug">
+                            {{ form.detailItem.name }}
+                        </h5>
+                        <span
+                            v-if="form.isSelfOrderItemSoldOut(form.detailItem.id)"
+                            class="inline-flex min-h-[1.35rem] items-center justify-center rounded bg-rose-600 px-2 text-[11px] font-black leading-none text-white ring-1 ring-rose-900/40"
+                        >
+                            SO
+                        </span>
+                    </div>
                     <p class="mt-1 text-sm text-white/60">{{ form.formatCurrency(form.detailItem.price) }}</p>
                 </div>
                 <div class="scrollbar-dark min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
@@ -1863,7 +1887,11 @@ function handleSuccessQrisError() {
                         <span class="w-8 text-center text-sm font-bold">{{ form.detailQty }}</span>
                         <button
                             type="button"
-                            class="h-8 w-8 rounded-lg bg-white/10 text-base font-bold"
+                            class="h-8 w-8 rounded-lg bg-white/10 text-base font-bold disabled:cursor-not-allowed disabled:opacity-35"
+                            :disabled="
+                                form.detailSoldOutMaxQty != null &&
+                                form.detailQty >= form.detailSoldOutMaxQty
+                            "
                             @click="form.detailQty = Math.min(99, form.detailQty + 1)"
                         >
                             +
@@ -1891,16 +1919,34 @@ function handleSuccessQrisError() {
                                     :key="option.id"
                                     class="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-[#121215] px-2 py-2 text-sm"
                                 >
-                                    <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                                    <label
+                                        class="flex min-w-0 flex-1 items-center gap-2"
+                                        :class="
+                                            form.isSelfOrderModifierOptionSoldOut(option.id) &&
+                                            !form.detailSelectedModifiers[group.modifier_id]?.[option.id]
+                                                ? 'cursor-not-allowed opacity-60'
+                                                : 'cursor-pointer'
+                                        "
+                                    >
                                         <input
                                             type="checkbox"
-                                            class="h-4 w-4 shrink-0 accent-amber-500"
+                                            class="h-4 w-4 shrink-0 accent-amber-500 disabled:opacity-40"
                                             :checked="Boolean(form.detailSelectedModifiers[group.modifier_id]?.[option.id])"
+                                            :disabled="
+                                                form.isSelfOrderModifierOptionSoldOut(option.id) &&
+                                                !form.detailSelectedModifiers[group.modifier_id]?.[option.id]
+                                            "
                                             @change="
                                                 form.handleToggleDetailModifier(group.modifier_id, option.id)
                                             "
                                         />
                                         <span class="min-w-0 break-words leading-snug">{{ option.name }}</span>
+                                        <span
+                                            v-if="form.isSelfOrderModifierOptionSoldOut(option.id)"
+                                            class="inline-flex shrink-0 items-center rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white ring-1 ring-rose-900/40"
+                                        >
+                                            SO
+                                        </span>
                                     </label>
                                     <div
                                         v-if="form.detailSelectedModifiers[group.modifier_id]?.[option.id]"
@@ -1920,7 +1966,8 @@ function handleSuccessQrisError() {
                                         }}</span>
                                         <button
                                             type="button"
-                                            class="h-7 w-7 rounded-lg bg-white/10 text-sm font-bold"
+                                            class="h-7 w-7 rounded-lg bg-white/10 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-35"
+                                            :disabled="form.isSelfOrderModifierOptionSoldOut(option.id)"
                                             @click="
                                                 form.handleDetailModifierQty(group.modifier_id, option.id, 1)
                                             "
@@ -1938,7 +1985,7 @@ function handleSuccessQrisError() {
                         <button
                             type="button"
                             class="rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold"
-                            @click="form.detailItemId = null"
+                            @click="form.closeItemDetailWithoutSave"
                         >
                             Cancel
                         </button>
