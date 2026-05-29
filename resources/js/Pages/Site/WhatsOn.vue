@@ -1,8 +1,10 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import { Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
+
+const MOBILE_PAGE_SIZE = 5;
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
@@ -10,6 +12,12 @@ const props = defineProps({
     items: { type: Array, default: () => [] },
 });
 const { t } = useSiteI18n();
+
+const isMobileView = ref(false);
+const mobileVisibleCount = ref(MOBILE_PAGE_SIZE);
+const loadMoreRef = ref(null);
+let loadMoreObserver = null;
+let mobileMqCleanup = null;
 
 function tileClass(index) {
     const pattern = index % 10;
@@ -46,6 +54,85 @@ const normalizedItems = computed(() =>
             .trim(),
     })),
 );
+
+const displayedItems = computed(() => {
+    if (!isMobileView.value) {
+        return normalizedItems.value;
+    }
+    return normalizedItems.value.slice(0, mobileVisibleCount.value);
+});
+
+const hasMoreOnMobile = computed(
+    () => isMobileView.value && mobileVisibleCount.value < normalizedItems.value.length,
+);
+
+const mobileRemainingCount = computed(() =>
+    Math.max(0, normalizedItems.value.length - mobileVisibleCount.value),
+);
+
+function syncMobileBreakpoint() {
+    if (typeof window === 'undefined') return;
+    isMobileView.value = window.matchMedia('(max-width: 767px)').matches;
+    if (!isMobileView.value) {
+        mobileVisibleCount.value = MOBILE_PAGE_SIZE;
+    }
+}
+
+function loadMoreMobile() {
+    if (!hasMoreOnMobile.value) return;
+    mobileVisibleCount.value = Math.min(
+        mobileVisibleCount.value + MOBILE_PAGE_SIZE,
+        normalizedItems.value.length,
+    );
+}
+
+function setupLoadMoreObserver() {
+    loadMoreObserver?.disconnect();
+    loadMoreObserver = null;
+
+    if (!loadMoreRef.value || !hasMoreOnMobile.value) return;
+
+    loadMoreObserver = new IntersectionObserver(
+        (entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                loadMoreMobile();
+            }
+        },
+        { root: null, rootMargin: '160px 0px', threshold: 0 },
+    );
+    loadMoreObserver.observe(loadMoreRef.value);
+}
+
+watch(
+    () => props.items.length,
+    () => {
+        mobileVisibleCount.value = MOBILE_PAGE_SIZE;
+    },
+);
+
+watch([hasMoreOnMobile, displayedItems], () => {
+    nextTick(() => setupLoadMoreObserver());
+});
+
+onMounted(() => {
+    syncMobileBreakpoint();
+    const mq = window.matchMedia('(max-width: 767px)');
+    const onMqChange = () => {
+        syncMobileBreakpoint();
+        nextTick(() => setupLoadMoreObserver());
+    };
+    mq.addEventListener('change', onMqChange);
+    mobileMqCleanup = () => mq.removeEventListener('change', onMqChange);
+
+    nextTick(() => setupLoadMoreObserver());
+});
+
+onBeforeUnmount(() => {
+    loadMoreObserver?.disconnect();
+    loadMoreObserver = null;
+    mobileMqCleanup?.();
+    mobileMqCleanup = null;
+});
 </script>
 
 <template>
@@ -62,7 +149,7 @@ const normalizedItems = computed(() =>
 
             <div v-else class="grid grid-cols-1 gap-4 md:auto-rows-[110px] md:grid-cols-12 md:gap-5">
                 <Link
-                    v-for="(item, index) in normalizedItems"
+                    v-for="(item, index) in displayedItems"
                     :key="item.id"
                     :href="`/news/${item.id}`"
                     class="group relative block overflow-hidden rounded-xl border border-white/15 bg-[#3a3a40] shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-white/30 hover:shadow-2xl hover:shadow-black/35"
@@ -93,6 +180,18 @@ const normalizedItems = computed(() =>
                         </div>
                     </div>
                 </Link>
+            </div>
+
+            <div
+                v-if="hasMoreOnMobile"
+                ref="loadMoreRef"
+                class="mt-6 flex flex-col items-center justify-center gap-2 py-4 md:hidden"
+                aria-hidden="true"
+            >
+                <div class="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-amber-400/90" />
+                <p class="text-xs text-white/50">
+                    Memuat {{ Math.min(MOBILE_PAGE_SIZE, mobileRemainingCount) }} berita berikutnya…
+                </p>
             </div>
         </section>
     </SiteLayout>
