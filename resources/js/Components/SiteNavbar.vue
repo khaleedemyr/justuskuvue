@@ -396,13 +396,6 @@ onBeforeUnmount(() => {
                             </Link>
                         </div>
                         <p v-else class="py-8 text-center text-sm text-white/60">No brands available.</p>
-                        <Link
-                            href="/brands"
-                            class="mt-6 block text-center text-xs font-semibold uppercase tracking-wider text-amber-400/90"
-                            @click="closeMobileBrandPicker"
-                        >
-                            View all brands →
-                        </Link>
                     </div>
                 </div>
             </div>
