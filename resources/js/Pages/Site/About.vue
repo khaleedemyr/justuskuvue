@@ -1,7 +1,8 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
+import SiteNavbar from '@/Components/SiteNavbar.vue';
 import { Link } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 
 const props = defineProps({
@@ -10,60 +11,12 @@ const props = defineProps({
     pageData: { type: Object, default: () => ({}) },
 });
 
-const { t, lang, setLang, translateMenuLabel } = useSiteI18n();
+const { t } = useSiteI18n();
 
 const sections = computed(() => (Array.isArray(props.pageData?.sections) ? props.pageData.sections : []));
 const storySection = computed(() => sections.value.find((s) => s?.id === 'our-story') || sections.value[0] || null);
 const philosophySection = computed(() => sections.value.find((s) => s?.id === 'brand-philosophy') || sections.value[1] || null);
 const bottomSection = computed(() => sections.value.find((s) => s?.id === 'vision-mission') || sections.value[2] || null);
-const navItems = computed(() => {
-    if (props.menus.length > 0) return props.menus;
-    return ['HOME', 'BRAND', 'HOME SERVICE', 'JUSTUS APPS', "WHAT'S ON", 'CAREERS', 'RESERVATION', 'ABOUT'];
-});
-const translatedNavItems = computed(() => navItems.value.map((item) => translateMenuLabel(item)));
-const brandMenuOpen = ref(false);
-let brandMenuCloseTimer = null;
-
-function menuToHref(label) {
-    const key = String(label || '').trim().toUpperCase();
-    if (key === 'HOME') return '/';
-    if (key.includes('HOME SERVICE')) return '/home-service';
-    if (key === 'BRAND') return '/brands';
-    if (key === 'JUSTUS APPS') return '/justus-apps';
-    if (key === "WHAT'S ON") return '/whats-on';
-    if (key === 'CAREERS') return '/careers';
-    if (key === 'RESERVATION') return '/reservation';
-    if (key === 'ABOUT') return '/about';
-    return '#';
-}
-
-function brandHref(brand) {
-    const key = String(brand?.slug || brand?.title || '').trim();
-    return key ? `/brands?brand=${encodeURIComponent(key)}` : '/brands';
-}
-
-function openBrandMenu() {
-    if (brandMenuCloseTimer) {
-        clearTimeout(brandMenuCloseTimer);
-        brandMenuCloseTimer = null;
-    }
-    brandMenuOpen.value = true;
-}
-
-function scheduleCloseBrandMenu() {
-    if (brandMenuCloseTimer) clearTimeout(brandMenuCloseTimer);
-    brandMenuCloseTimer = setTimeout(() => {
-        brandMenuOpen.value = false;
-        brandMenuCloseTimer = null;
-    }, 120);
-}
-
-onBeforeUnmount(() => {
-    if (brandMenuCloseTimer) {
-        clearTimeout(brandMenuCloseTimer);
-        brandMenuCloseTimer = null;
-    }
-});
 </script>
 
 <template>
@@ -100,103 +53,42 @@ onBeforeUnmount(() => {
                     <p class="mt-3 text-2xl italic text-white/90 md:text-4xl">{{ pageData?.subtitle || '' }}</p>
                 </div>
                 <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
-                    <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
-                        <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-[12px] tracking-wide text-white/90 sm:text-[14px] md:gap-x-6 md:text-[16px]">
-                            <template v-for="(item, idx) in navItems" :key="item">
-                                <div
-                                    v-if="String(item).trim().toUpperCase().includes('BRAND')"
-                                    @mouseenter="openBrandMenu"
-                                    @mouseleave="scheduleCloseBrandMenu"
-                                >
-                                    <Link href="/brands" class="transition hover:text-white">{{ translatedNavItems[idx] }}</Link>
-                                </div>
-                                <Link v-else :href="menuToHref(item)" class="transition hover:text-white">
-                                    {{ translatedNavItems[idx] }}
-                                </Link>
-                            </template>
-                        </nav>
-                        <div class="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[10px] sm:ml-2 sm:text-[11px]">
-                            <button
-                                type="button"
-                                class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
-                                :class="lang === 'id' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                                @click="setLang('id')"
-                            >
-                                <span aria-hidden>🇮🇩</span> ID
-                            </button>
-                            <button
-                                type="button"
-                                class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
-                                :class="lang === 'en' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                                @click="setLang('en')"
-                            >
-                                <span aria-hidden>🇬🇧</span> EN
-                            </button>
-                        </div>
+                    <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="bar" />
+                </div>
+            </section>
+
+            <section v-if="storySection" class="border-b border-white/10 bg-[#3f3f43] px-6 py-14 md:px-10 md:py-20">
+                <div class="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 md:items-center md:gap-16">
+                    <div>
+                        <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ storySection.title }}</h2>
+                        <p class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ storySection.body }}</p>
                     </div>
-                    <div
-                        v-if="brandMenuOpen"
-                        class="absolute left-0 right-0 top-full z-[300] bg-[#3f3f43] shadow-xl"
-                        @mouseenter="openBrandMenu"
-                        @mouseleave="scheduleCloseBrandMenu"
-                    >
-                        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-6 px-6 py-10">
-                            <Link
-                                v-for="brand in brandLogos"
-                                :key="brand.id"
-                                :href="brandHref(brand)"
-                                class="flex h-[80px] w-[160px] items-center justify-center px-1 transition hover:scale-105 md:h-[96px] md:w-[210px]"
-                            >
-                                <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
-                            </Link>
-                        </div>
+                    <div v-if="storySection.image_url" class="overflow-hidden rounded-2xl">
+                        <img :src="storySection.image_url" :alt="storySection.title || 'Our Story'" class="h-full w-full object-cover" />
                     </div>
                 </div>
             </section>
 
-            <section class="mx-auto w-full max-w-7xl px-6 py-10 md:py-12">
-                <article v-if="storySection" class="mb-10">
-                    <p class="whitespace-pre-line text-2xl leading-relaxed text-white/88 [text-align:justify] [text-justify:inter-word]">
-                        {{ storySection.content }}
-                    </p>
-                </article>
-
-                <article v-if="philosophySection">
-                    <img
-                        v-if="philosophySection.image_url"
-                        :src="philosophySection.image_url"
-                        :alt="philosophySection.title"
-                        class="h-auto w-full rounded-sm border border-white/10 object-cover"
-                    />
-                    <h2 class="mt-8 text-4xl font-medium text-white/95">{{ philosophySection.title }}</h2>
-                    <p class="mt-4 whitespace-pre-line text-2xl leading-relaxed text-white/88 [text-align:justify] [text-justify:inter-word]">
-                        {{ philosophySection.content }}
-                    </p>
-                </article>
-            </section>
-
-            <section
-                v-if="bottomSection"
-                class="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 px-6 pb-14 md:grid-cols-[42%_1fr]"
-            >
-                <div>
-                    <img
-                        v-if="bottomSection.image_url"
-                        :src="bottomSection.image_url"
-                        :alt="bottomSection.title"
-                        class="h-full min-h-[260px] w-full object-cover"
-                    />
-                    <div v-else class="flex min-h-[260px] items-center justify-center bg-zinc-900 text-sm text-white/60">
-                        {{ t('noImage') }}
+            <section v-if="philosophySection" class="border-b border-white/10 bg-[#2f2f35] px-6 py-14 md:px-10 md:py-20">
+                <div class="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 md:items-center md:gap-16">
+                    <div v-if="philosophySection.image_url" class="order-2 overflow-hidden rounded-2xl md:order-1">
+                        <img :src="philosophySection.image_url" :alt="philosophySection.title || 'Philosophy'" class="h-full w-full object-cover" />
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ philosophySection.title }}</h2>
+                        <p class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ philosophySection.body }}</p>
                     </div>
                 </div>
-                <article>
-                    <h2 class="text-5xl font-semibold uppercase">{{ bottomSection.title }}</h2>
-                    <p v-if="bottomSection.subtitle" class="mt-2 text-2xl text-white/90">{{ bottomSection.subtitle }}</p>
-                    <p class="mt-4 whitespace-pre-line text-2xl leading-relaxed text-white/90 [text-align:justify] [text-justify:inter-word]">
-                        {{ bottomSection.content }}
-                    </p>
-                </article>
+            </section>
+
+            <section v-if="bottomSection" class="bg-[#3f3f43] px-6 py-14 md:px-10 md:py-20">
+                <div class="mx-auto max-w-7xl text-center">
+                    <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ bottomSection.title }}</h2>
+                    <p class="mx-auto mt-4 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ bottomSection.body }}</p>
+                    <div v-if="bottomSection.image_url" class="mx-auto mt-10 max-w-4xl overflow-hidden rounded-2xl">
+                        <img :src="bottomSection.image_url" :alt="bottomSection.title || 'Vision Mission'" class="h-full w-full object-cover" />
+                    </div>
+                </div>
             </section>
         </main>
     </SiteLayout>
