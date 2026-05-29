@@ -16,6 +16,7 @@ const props = defineProps({
 
 const heroRef = ref(null);
 const navShellRef = ref(null);
+const navShellDesktopRef = ref(null);
 const pinned = ref(false);
 const navHeight = ref(0);
 let revealObserver = null;
@@ -143,11 +144,12 @@ function blockArticleClass(block) {
 }
 
 function updatePinned() {
-    if (!heroRef.value || !navShellRef.value) return;
-    navHeight.value = navShellRef.value.offsetHeight || 0;
+    if (!heroRef.value) return;
+    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+    const navEl = isDesktop ? navShellDesktopRef.value : navShellRef.value;
+    navHeight.value = navEl?.offsetHeight || 0;
     const heroRect = heroRef.value.getBoundingClientRect();
-    const navTop = heroRect.bottom - (navShellRef.value.offsetHeight || 1);
-    pinned.value = navTop <= 0.5;
+    pinned.value = heroRect.bottom <= 0.5;
 }
 
 function scrollNewsBy(dir) {
@@ -262,7 +264,12 @@ onBeforeUnmount(() => {
 <template>
     <SiteLayout title="Home" :show-header="false">
         <main class="font-montserrat w-full overflow-x-hidden bg-black text-white">
-            <div ref="heroRef" class="relative flex h-[60svh] min-h-[320px] w-full flex-col overflow-visible bg-black sm:h-[68svh] sm:min-h-[360px] md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh]">
+            <div class="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden md:block md:h-auto md:max-h-none">
+            <div
+                id="home-hero"
+                ref="heroRef"
+                class="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-black md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:flex-none"
+            >
                 <template v-if="banner?.image && isVideoBanner()">
                     <video
                         class="absolute inset-0 h-full w-full bg-black object-cover object-center"
@@ -312,12 +319,29 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div
-                    ref="navShellRef"
-                    :class="pinned ? 'fixed inset-x-0 top-0 z-40' : 'absolute inset-x-0 bottom-0 z-30'"
-                    class="relative w-full border-y border-white/10 bg-black/75 backdrop-blur-md"
+                    ref="navShellDesktopRef"
+                    :class="pinned ? 'md:fixed md:inset-x-0 md:top-0 md:bottom-auto' : 'md:absolute md:inset-x-0 md:bottom-0'"
+                    class="pointer-events-none z-30 hidden w-full border-y border-white/10 bg-black/75 backdrop-blur-md md:block"
                 >
-                    <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="bar" :mobile-bar-at-top="pinned" />
+                    <div class="pointer-events-auto">
+                        <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="bar" :mobile-bar-at-top="true" />
+                    </div>
                 </div>
+            </div>
+
+            <div
+                ref="navShellRef"
+                :class="pinned ? 'fixed inset-x-0 top-0 z-40' : 'relative z-30'"
+                class="w-full border-y border-white/10 bg-black/75 backdrop-blur-md md:hidden"
+            >
+                <SiteNavbar
+                    :menus="menus"
+                    :brand-logos="brandLogos"
+                    variant="bar"
+                    :mobile-bar-at-top="pinned"
+                    hamburger-teleport-to="#home-hero"
+                />
+            </div>
             </div>
             <div aria-hidden class="shrink-0" :style="{ height: pinned ? `${navHeight}px` : '0px' }" />
 

@@ -20,6 +20,8 @@ const props = defineProps({
     },
     /** When true (e.g. Home nav pinned to top), use full mobile bar instead of bottom-minimal layout. */
     mobileBarAtTop: { type: Boolean, default: false },
+    /** CSS selector to render floating hamburger inside hero (e.g. "#home-hero"). */
+    hamburgerTeleportTo: { type: String, default: '' },
 });
 
 const mobileOpen = ref(false);
@@ -57,6 +59,10 @@ const navEntries = computed(() =>
 const mobilePinnedEntries = computed(() => navEntries.value.filter(({ item }) => isMobilePinnedNavItem(item)));
 
 const mobileDrawerEntries = computed(() => navEntries.value.filter(({ item }) => !isMobilePinnedNavItem(item)));
+
+const useHeroHamburger = computed(
+    () => Boolean(props.hamburgerTeleportTo) && isMinimalMobileBar.value,
+);
 
 function openBrandMenu() {
     if (brandMenuCloseTimer) {
@@ -100,33 +106,34 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="relative w-full">
-        <!-- Mobile hamburger (floating) for bottom hero bar -->
-        <button
-            v-if="isMinimalMobileBar"
-            type="button"
-            class="fixed left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
-            :aria-expanded="mobileOpen"
-            aria-controls="site-mobile-nav"
-            @click="toggleMobileMenu"
-        >
-            <span class="sr-only">Menu</span>
-            <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    :class="{ hidden: mobileOpen, 'inline-flex': !mobileOpen }"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                />
-                <path
-                    :class="{ hidden: !mobileOpen, 'inline-flex': mobileOpen }"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                />
-            </svg>
-        </button>
+        <!-- Mobile hamburger on hero banner (top-left) -->
+        <Teleport v-if="useHeroHamburger" :to="hamburgerTeleportTo">
+            <button
+                type="button"
+                class="absolute left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
+                :aria-expanded="mobileOpen"
+                aria-controls="site-mobile-nav"
+                @click="toggleMobileMenu"
+            >
+                <span class="sr-only">Menu</span>
+                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        :class="{ hidden: mobileOpen, 'inline-flex': !mobileOpen }"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16"
+                    />
+                    <path
+                        :class="{ hidden: !mobileOpen, 'inline-flex': mobileOpen }"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </Teleport>
 
         <div
             :class="
