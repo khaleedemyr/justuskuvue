@@ -309,12 +309,25 @@ onBeforeUnmount(() => {
                     </svg>
                 </button>
 
+                <Link
+                    href="/"
+                    class="absolute inset-x-0 top-4 z-[255] flex justify-center px-14 md:hidden"
+                    aria-label="Justus Group Home"
+                >
+                    <img
+                        src="/logohitam.png"
+                        alt="Justus Group"
+                        class="h-auto w-[148px] max-w-[calc(100%-7rem)] object-contain"
+                    />
+                </Link>
+
                 <div class="relative z-10 flex min-h-0 flex-1 flex-col">
                     <div class="hero-copy mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 py-8 text-center sm:px-6 sm:py-10">
                         <img
                             src="/logohitam.png"
-                            alt="Justus Group"
-                            class="mb-5 h-auto w-[168px] object-contain sm:mb-6 sm:w-[220px] md:mb-6 md:w-[320px]"
+                            alt=""
+                            aria-hidden="true"
+                            class="mb-6 hidden h-auto w-[320px] object-contain md:block"
                         />
                         <h1 class="hero-title font-normal uppercase text-white">
                             {{ banner?.title || 'CRAFTED GUEST JOURNEY' }}
