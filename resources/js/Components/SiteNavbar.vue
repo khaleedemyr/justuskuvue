@@ -68,6 +68,9 @@ const showFloatingMobileHamburger = computed(
     () => !props.delegateMobileMenuButton && isMinimalMobileBar.value && !isHeader.value,
 );
 
+/** Header nav (top): dropdown below. Hero bar nav (bottom): dropdown above (avoids overflow clip). */
+const brandDropdownPositionClass = computed(() => (isHeader.value ? 'top-full' : 'bottom-full'));
+
 function openBrandMenu() {
     if (brandMenuCloseTimer) {
         clearTimeout(brandMenuCloseTimer);
@@ -345,7 +348,10 @@ onBeforeUnmount(() => {
         <!-- Desktop brand dropdown -->
         <div
             v-if="brandMenuOpen && brandLogos.length > 0"
-            class="absolute left-0 right-0 top-full z-[300] hidden bg-[#3f3f43] shadow-xl md:block"
+            :class="[
+                'absolute left-0 right-0 z-[300] hidden bg-[#3f3f43] shadow-xl md:block',
+                brandDropdownPositionClass,
+            ]"
             @mouseenter="openBrandMenu"
             @mouseleave="scheduleCloseBrandMenu"
         >

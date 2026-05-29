@@ -24,7 +24,7 @@ const siteNavRef = ref(null);
         </svg>
     </button>
 
-    <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
+    <div class="absolute inset-x-0 bottom-0 z-[280] w-full overflow-visible border-y border-white/10 bg-black/75 backdrop-blur-md">
         <SiteNavbar
             ref="siteNavRef"
             :menus="menus"

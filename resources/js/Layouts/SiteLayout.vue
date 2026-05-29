@@ -23,8 +23,8 @@ const { t } = useSiteI18n();
     <Head :title="title" />
 
     <div :class="shellClass">
-        <header v-if="showHeader" class="sticky top-0 z-30">
-            <nav class="border-b border-white/20 bg-black/45 backdrop-blur-md">
+        <header v-if="showHeader" class="sticky top-0 z-[280] overflow-visible">
+            <nav class="overflow-visible border-b border-white/20 bg-black/45 backdrop-blur-md">
                 <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="header" />
             </nav>
         </header>

@@ -269,7 +269,7 @@ onBeforeUnmount(() => {
             <div
                 id="home-hero"
                 ref="heroRef"
-                class="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-black md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:flex-none"
+                class="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-black md:overflow-visible md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:flex-none"
             >
                 <template v-if="banner?.image && isVideoBanner()">
                     <video
@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
                 <div
                     ref="navShellDesktopRef"
                     :class="pinned ? 'md:fixed md:inset-x-0 md:top-0 md:bottom-auto' : 'md:absolute md:inset-x-0 md:bottom-0'"
-                    class="pointer-events-none z-30 hidden w-full border-y border-white/10 bg-black/75 backdrop-blur-md md:block"
+                    class="pointer-events-none z-[280] hidden w-full overflow-visible border-y border-white/10 bg-black/75 backdrop-blur-md md:block"
                 >
                     <div class="pointer-events-auto">
                         <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="bar" :mobile-bar-at-top="true" />
