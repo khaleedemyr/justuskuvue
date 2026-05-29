@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
                 </button>
 
                 <div class="relative z-10 flex min-h-0 flex-1 flex-col">
-                    <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
+                    <div class="hero-copy mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-3 py-8 text-center sm:px-6 sm:py-10">
                         <img
                             src="/logohitam.png"
                             alt="Justus Group"
@@ -624,32 +624,23 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.hero-copy {
+    width: 100%;
+}
+
 .hero-title {
     font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-    font-size: 1.625rem;
+    font-size: clamp(0.8125rem, 4.1vw, 1.125rem);
     line-height: 1.2;
-    letter-spacing: 0.08em;
-    max-width: 11.5rem;
+    letter-spacing: 0.035em;
+    white-space: nowrap;
 }
 
 .hero-subtitle {
     font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-    font-size: 0.9375rem;
-    line-height: 1.4;
-    max-width: 13.5rem;
-}
-
-@media (min-width: 640px) {
-    .hero-title {
-        font-size: 2rem;
-        max-width: 14rem;
-        letter-spacing: 0.06em;
-    }
-
-    .hero-subtitle {
-        font-size: 1.0625rem;
-        max-width: 16rem;
-    }
+    font-size: clamp(0.6875rem, 3.45vw, 0.875rem);
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -657,13 +648,13 @@ onBeforeUnmount(() => {
         font-size: 2.75rem;
         line-height: 1.08;
         letter-spacing: 0.035em;
-        max-width: none;
+        white-space: normal;
     }
 
     .hero-subtitle {
         font-size: 1.25rem;
         line-height: 1.35;
-        max-width: none;
+        white-space: normal;
     }
 }
 </style>
