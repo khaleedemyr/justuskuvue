@@ -17,6 +17,7 @@ const props = defineProps({
 const heroRef = ref(null);
 const navShellRef = ref(null);
 const navShellDesktopRef = ref(null);
+const siteNavRef = ref(null);
 const pinned = ref(false);
 const navHeight = ref(0);
 let revealObserver = null;
@@ -149,7 +150,7 @@ function updatePinned() {
     const navEl = isDesktop ? navShellDesktopRef.value : navShellRef.value;
     navHeight.value = navEl?.offsetHeight || 0;
     const heroRect = heroRef.value.getBoundingClientRect();
-    pinned.value = heroRect.bottom <= 0.5;
+    pinned.value = heroRect.bottom <= 0;
 }
 
 function scrollNewsBy(dir) {
@@ -296,6 +297,18 @@ onBeforeUnmount(() => {
 
                 <div class="pointer-events-none absolute inset-0 bg-black/50" />
 
+                <button
+                    v-if="!pinned"
+                    type="button"
+                    class="absolute left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
+                    aria-label="Menu"
+                    @click="siteNavRef?.toggleMobileMenu()"
+                >
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
                 <div class="relative z-10 flex min-h-0 flex-1 flex-col">
                     <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:py-10">
                         <img
@@ -335,11 +348,12 @@ onBeforeUnmount(() => {
                 class="w-full border-y border-white/10 bg-black/75 backdrop-blur-md md:hidden"
             >
                 <SiteNavbar
+                    ref="siteNavRef"
                     :menus="menus"
                     :brand-logos="brandLogos"
                     variant="bar"
                     :mobile-bar-at-top="pinned"
-                    hamburger-teleport-to="#home-hero"
+                    :delegate-mobile-menu-button="!pinned"
                 />
             </div>
             </div>

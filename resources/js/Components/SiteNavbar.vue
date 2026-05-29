@@ -20,8 +20,8 @@ const props = defineProps({
     },
     /** When true (e.g. Home nav pinned to top), use full mobile bar instead of bottom-minimal layout. */
     mobileBarAtTop: { type: Boolean, default: false },
-    /** CSS selector to render floating hamburger inside hero (e.g. "#home-hero"). */
-    hamburgerTeleportTo: { type: String, default: '' },
+    /** Parent renders the hamburger (e.g. Home hero); drawer stays in this component. */
+    delegateMobileMenuButton: { type: Boolean, default: false },
 });
 
 const mobileOpen = ref(false);
@@ -60,8 +60,12 @@ const mobilePinnedEntries = computed(() => navEntries.value.filter(({ item }) =>
 
 const mobileDrawerEntries = computed(() => navEntries.value.filter(({ item }) => !isMobilePinnedNavItem(item)));
 
-const useHeroHamburger = computed(
-    () => Boolean(props.hamburgerTeleportTo) && isMinimalMobileBar.value,
+const showInBarMobileHamburger = computed(
+    () => !props.delegateMobileMenuButton && !isMinimalMobileBar.value,
+);
+
+const showFloatingMobileHamburger = computed(
+    () => !props.delegateMobileMenuButton && isMinimalMobileBar.value,
 );
 
 function openBrandMenu() {
@@ -88,6 +92,12 @@ function closeMobileMenu() {
     mobileOpen.value = false;
 }
 
+defineExpose({
+    toggleMobileMenu,
+    closeMobileMenu,
+    mobileOpen,
+});
+
 watch(mobileOpen, (open) => {
     if (typeof document === 'undefined') return;
     document.body.style.overflow = open ? 'hidden' : '';
@@ -106,34 +116,33 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="relative w-full">
-        <!-- Mobile hamburger on hero banner (top-left) -->
-        <Teleport v-if="useHeroHamburger" :to="hamburgerTeleportTo">
-            <button
-                type="button"
-                class="absolute left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
-                :aria-expanded="mobileOpen"
-                aria-controls="site-mobile-nav"
-                @click="toggleMobileMenu"
-            >
-                <span class="sr-only">Menu</span>
-                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        :class="{ hidden: mobileOpen, 'inline-flex': !mobileOpen }"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4 6h16M4 12h16M4 18h16"
-                    />
-                    <path
-                        :class="{ hidden: !mobileOpen, 'inline-flex': mobileOpen }"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
-                </svg>
-            </button>
-        </Teleport>
+        <!-- Mobile hamburger fallback (fixed) when not delegated to parent -->
+        <button
+            v-if="showFloatingMobileHamburger"
+            type="button"
+            class="fixed left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
+            :aria-expanded="mobileOpen"
+            aria-controls="site-mobile-nav"
+            @click="toggleMobileMenu"
+        >
+            <span class="sr-only">Menu</span>
+            <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    :class="{ hidden: mobileOpen, 'inline-flex': !mobileOpen }"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                />
+                <path
+                    :class="{ hidden: !mobileOpen, 'inline-flex': mobileOpen }"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                />
+            </svg>
+        </button>
 
         <div
             :class="
@@ -144,9 +153,9 @@ onBeforeUnmount(() => {
                       : 'mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 md:justify-center'
             "
         >
-            <!-- Mobile: hamburger (in-bar) -->
+            <!-- Mobile: hamburger (in-bar, e.g. when nav pinned to top) -->
             <button
-                v-if="!isMinimalMobileBar"
+                v-if="showInBarMobileHamburger"
                 type="button"
                 class="inline-flex items-center justify-center rounded-md p-2 text-white/90 transition hover:bg-white/10 hover:text-white md:hidden"
                 :aria-expanded="mobileOpen"
@@ -246,7 +255,12 @@ onBeforeUnmount(() => {
         <div
             v-show="mobileOpen"
             id="site-mobile-nav"
-            class="border-t border-white/10 bg-black/90 md:hidden"
+            :class="[
+                'border-t border-white/10 bg-black/90 md:hidden',
+                delegateMobileMenuButton
+                    ? 'fixed inset-x-0 top-0 z-[110] max-h-[min(85dvh,100%)] overflow-y-auto border-b border-t-0 bg-black/95 pt-14 shadow-xl'
+                    : '',
+            ]"
         >
             <nav class="flex flex-col px-4 py-3" aria-label="Mobile">
                 <template v-for="{ item, label } in mobileDrawerEntries" :key="`mobile-${item}`">
