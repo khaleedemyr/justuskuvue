@@ -163,6 +163,7 @@ onBeforeUnmount(() => {
                     <SiteHeroBannerText
                         :title="heroTitle"
                         :subtitle="heroSubtitleParagraphs[0] || ''"
+                        subtitle-wrap
                     >
                         <p
                             v-for="(para, idx) in heroSubtitleParagraphs.slice(1)"

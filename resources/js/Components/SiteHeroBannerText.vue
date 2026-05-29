@@ -4,6 +4,8 @@ import { Link } from '@inertiajs/vue3';
 defineProps({
     title: { type: String, default: '' },
     subtitle: { type: String, default: '' },
+    /** Izinkan subtitle panjang wrap di mobile (Home tetap satu baris). */
+    subtitleWrap: { type: Boolean, default: false },
 });
 </script>
 
@@ -30,7 +32,11 @@ defineProps({
         <h1 v-if="title" class="hero-title font-normal uppercase text-white">
             {{ title }}
         </h1>
-        <p v-if="subtitle" class="hero-subtitle mt-2 font-normal italic text-white/90 md:mt-3">
+        <p
+            v-if="subtitle"
+            class="hero-subtitle mt-2 font-normal italic text-white/90 md:mt-3"
+            :class="{ 'hero-subtitle--wrap': subtitleWrap }"
+        >
             {{ subtitle }}
         </p>
         <slot />
@@ -57,6 +63,12 @@ defineProps({
     white-space: nowrap;
 }
 
+.hero-subtitle--wrap {
+    max-width: 100%;
+    white-space: normal;
+    text-wrap: pretty;
+}
+
 @media (min-width: 768px) {
     .hero-title {
         font-size: 2.75rem;
@@ -69,6 +81,10 @@ defineProps({
         font-size: 1.25rem;
         line-height: 1.35;
         white-space: normal;
+    }
+
+    .hero-subtitle--wrap {
+        max-width: 42rem;
     }
 }
 </style>
