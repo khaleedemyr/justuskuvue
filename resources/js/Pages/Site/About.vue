@@ -14,6 +14,11 @@ const sections = computed(() => (Array.isArray(props.pageData?.sections) ? props
 const storySection = computed(() => sections.value.find((s) => s?.id === 'our-story') || sections.value[0] || null);
 const philosophySection = computed(() => sections.value.find((s) => s?.id === 'brand-philosophy') || sections.value[1] || null);
 const bottomSection = computed(() => sections.value.find((s) => s?.id === 'vision-mission') || sections.value[2] || null);
+
+/** API ERP / SitePageController mengirim `content`, bukan `body`. */
+function sectionText(section) {
+    return String(section?.content ?? section?.body ?? '').trim();
+}
 </script>
 
 <template>
@@ -49,7 +54,9 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
                 <div class="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 md:items-center md:gap-16">
                     <div>
                         <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ storySection.title }}</h2>
-                        <p class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ storySection.body }}</p>
+                        <p v-if="sectionText(storySection)" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">
+                            {{ sectionText(storySection) }}
+                        </p>
                     </div>
                     <div v-if="storySection.image_url" class="overflow-hidden rounded-2xl">
                         <img :src="storySection.image_url" :alt="storySection.title || 'Our Story'" class="h-full w-full object-cover" />
@@ -64,7 +71,9 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
                     </div>
                     <div class="order-1 md:order-2">
                         <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ philosophySection.title }}</h2>
-                        <p class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ philosophySection.body }}</p>
+                        <p v-if="sectionText(philosophySection)" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">
+                            {{ sectionText(philosophySection) }}
+                        </p>
                     </div>
                 </div>
             </section>
@@ -72,7 +81,15 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
             <section v-if="bottomSection" class="bg-[#3f3f43] px-6 py-14 md:px-10 md:py-20">
                 <div class="mx-auto max-w-7xl text-center">
                     <h2 class="text-2xl font-semibold uppercase tracking-[0.12em] md:text-4xl">{{ bottomSection.title }}</h2>
-                    <p class="mx-auto mt-4 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base">{{ bottomSection.body }}</p>
+                    <p v-if="bottomSection.subtitle" class="mt-2 text-sm italic text-white/75 md:text-base">
+                        {{ bottomSection.subtitle }}
+                    </p>
+                    <p
+                        v-if="sectionText(bottomSection)"
+                        class="mx-auto mt-4 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-white/85 md:text-base"
+                    >
+                        {{ sectionText(bottomSection) }}
+                    </p>
                     <div v-if="bottomSection.image_url" class="mx-auto mt-10 max-w-4xl overflow-hidden rounded-2xl">
                         <img :src="bottomSection.image_url" :alt="bottomSection.title || 'Vision Mission'" class="h-full w-full object-cover" />
                     </div>
