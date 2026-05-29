@@ -314,18 +314,12 @@ onBeforeUnmount(() => {
                         <img
                             src="/logohitam.png"
                             alt="Justus Group"
-                            class="mb-4 h-auto w-[220px] object-contain sm:mb-5 sm:w-[260px] md:mb-6 md:w-[320px]"
+                            class="mb-5 h-auto w-[168px] object-contain sm:mb-6 sm:w-[220px] md:mb-6 md:w-[320px]"
                         />
-                        <h1
-                            class="hero-title font-normal uppercase leading-tight tracking-[0.035em]"
-                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 44px"
-                        >
+                        <h1 class="hero-title font-normal uppercase text-white">
                             {{ banner?.title || 'CRAFTED GUEST JOURNEY' }}
                         </h1>
-                        <p
-                            class="hero-subtitle mt-3 font-normal italic leading-tight text-white/90"
-                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 20px"
-                        >
+                        <p class="hero-subtitle mt-2 font-normal italic text-white/90 md:mt-3">
                             {{ banner?.subtitle || 'Warm Caring Hospitality Experiences' }}
                         </p>
                     </div>
@@ -631,13 +625,46 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .hero-title {
-    font-family: 'Montserrat', Arial, Helvetica, sans-serif !important;
-    font-size: 44px !important;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+    font-size: 1.625rem;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    max-width: 11.5rem;
 }
 
 .hero-subtitle {
-    font-family: 'Montserrat', Arial, Helvetica, sans-serif !important;
-    font-size: 20px !important;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    max-width: 13.5rem;
+}
+
+@media (min-width: 640px) {
+    .hero-title {
+        font-size: 2rem;
+        max-width: 14rem;
+        letter-spacing: 0.06em;
+    }
+
+    .hero-subtitle {
+        font-size: 1.0625rem;
+        max-width: 16rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .hero-title {
+        font-size: 2.75rem;
+        line-height: 1.08;
+        letter-spacing: 0.035em;
+        max-width: none;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        line-height: 1.35;
+        max-width: none;
+    }
 }
 </style>
 
