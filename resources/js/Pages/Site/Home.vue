@@ -300,7 +300,7 @@ onBeforeUnmount(() => {
                 <button
                     v-if="!pinned"
                     type="button"
-                    class="absolute left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
+                    class="absolute left-4 top-4 z-[260] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
                     aria-label="Menu"
                     @click="siteNavRef?.toggleMobileMenu()"
                 >

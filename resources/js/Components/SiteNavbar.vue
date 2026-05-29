@@ -32,8 +32,8 @@ const { lang, setLang, navItems, translatedNavItems } = useSiteNav(toRef(props, 
 
 const isHeader = computed(() => props.variant === 'header');
 
-/** Bottom hero bar on mobile: only Brand + Reservation; hamburger floats top-left. */
-const isMinimalMobileBar = computed(() => !isHeader.value && !props.mobileBarAtTop);
+/** Mobile bar shows only Brand + Reservation; other links go in hamburger drawer. */
+const isMinimalMobileBar = computed(() => !props.mobileBarAtTop);
 
 const desktopNavClass = computed(() =>
     isHeader.value
@@ -61,11 +61,11 @@ const mobilePinnedEntries = computed(() => navEntries.value.filter(({ item }) =>
 const mobileDrawerEntries = computed(() => navEntries.value.filter(({ item }) => !isMobilePinnedNavItem(item)));
 
 const showInBarMobileHamburger = computed(
-    () => !props.delegateMobileMenuButton && !isMinimalMobileBar.value,
+    () => !props.delegateMobileMenuButton && (!isMinimalMobileBar.value || isHeader.value),
 );
 
 const showFloatingMobileHamburger = computed(
-    () => !props.delegateMobileMenuButton && isMinimalMobileBar.value,
+    () => !props.delegateMobileMenuButton && isMinimalMobileBar.value && !isHeader.value,
 );
 
 function openBrandMenu() {
@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
         <button
             v-if="showFloatingMobileHamburger"
             type="button"
-            class="fixed left-4 top-4 z-[120] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
+            class="fixed left-4 top-4 z-[260] inline-flex items-center justify-center rounded-md border border-white/20 bg-black/50 p-2 text-white/90 backdrop-blur-sm transition hover:bg-black/70 hover:text-white md:hidden"
             :aria-expanded="mobileOpen"
             aria-controls="site-mobile-nav"
             @click="toggleMobileMenu"
@@ -251,71 +251,96 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <!-- Mobile menu panel -->
-        <div
-            v-show="mobileOpen"
-            id="site-mobile-nav"
-            :class="[
-                'border-t border-white/10 bg-black/90 md:hidden',
-                delegateMobileMenuButton
-                    ? 'fixed inset-x-0 top-0 z-[110] max-h-[min(85dvh,100%)] overflow-y-auto border-b border-t-0 bg-black/95 pt-14 shadow-xl'
-                    : '',
-            ]"
-        >
-            <nav class="flex flex-col px-4 py-3" aria-label="Mobile">
-                <template v-for="{ item, label } in mobileDrawerEntries" :key="`mobile-${item}`">
-                    <Link
-                        :href="menuToHref(item)"
-                        class="border-b border-white/10 py-3 text-sm tracking-wide text-white/90 transition hover:text-white"
-                        @click="closeMobileMenu"
-                    >
-                        {{ label }}
-                    </Link>
-                </template>
-                <div v-if="brandLogos.length > 0" class="border-t border-white/10 pt-3">
-                    <p class="pb-2 text-xs font-semibold uppercase tracking-wider text-white/50">Brands</p>
-                    <div class="grid grid-cols-2 gap-3 pb-2">
-                        <Link
-                            v-for="brand in brandLogos"
-                            :key="brand.id"
-                            :href="brandHref(brand)"
-                            class="flex h-16 items-center justify-center rounded-lg bg-white/5 p-2 transition hover:bg-white/10"
+        <!-- Mobile menu: teleport to body so it is not clipped behind hero (overflow-hidden) -->
+        <Teleport to="body">
+            <div
+                v-if="mobileOpen"
+                class="fixed inset-0 z-[250] md:hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="site-mobile-nav-title"
+            >
+                <button
+                    type="button"
+                    class="absolute inset-0 bg-black/75"
+                    aria-label="Close menu"
+                    @click="closeMobileMenu"
+                />
+                <div
+                    id="site-mobile-nav"
+                    class="relative z-[251] max-h-[min(88dvh,100%)] w-full overflow-y-auto border-b border-white/10 bg-[#0f0f12] shadow-2xl"
+                >
+                    <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                        <p id="site-mobile-nav-title" class="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+                            Menu
+                        </p>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md p-2 text-white/90 transition hover:bg-white/10"
+                            aria-label="Close menu"
                             @click="closeMobileMenu"
                         >
-                            <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
-                        </Link>
+                            <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <Link
-                        href="/brands"
-                        class="block pb-1 text-xs uppercase tracking-wider text-amber-400/90"
-                        @click="closeMobileMenu"
-                    >
-                        View all brands →
-                    </Link>
+                    <nav class="flex flex-col px-4 py-3" aria-label="Mobile">
+                        <template v-for="{ item, label } in mobileDrawerEntries" :key="`mobile-${item}`">
+                            <Link
+                                :href="menuToHref(item)"
+                                class="border-b border-white/10 py-3 text-sm tracking-wide text-white/90 transition hover:text-white"
+                                @click="closeMobileMenu"
+                            >
+                                {{ label }}
+                            </Link>
+                        </template>
+                        <div v-if="brandLogos.length > 0" class="border-t border-white/10 pt-3">
+                            <p class="pb-2 text-xs font-semibold uppercase tracking-wider text-white/50">Brands</p>
+                            <div class="grid grid-cols-2 gap-3 pb-2">
+                                <Link
+                                    v-for="brand in brandLogos"
+                                    :key="brand.id"
+                                    :href="brandHref(brand)"
+                                    class="flex h-16 items-center justify-center rounded-lg bg-white/5 p-2 transition hover:bg-white/10"
+                                    @click="closeMobileMenu"
+                                >
+                                    <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
+                                </Link>
+                            </div>
+                            <Link
+                                href="/brands"
+                                class="block pb-1 text-xs uppercase tracking-wider text-amber-400/90"
+                                @click="closeMobileMenu"
+                            >
+                                View all brands →
+                            </Link>
+                        </div>
+                        <div
+                            v-if="isMinimalMobileBar || delegateMobileMenuButton"
+                            class="mt-4 flex items-center justify-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[11px]"
+                        >
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition"
+                                :class="lang === 'id' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
+                                @click="setLang('id')"
+                            >
+                                <span aria-hidden>🇮🇩</span> ID
+                            </button>
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition"
+                                :class="lang === 'en' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
+                                @click="setLang('en')"
+                            >
+                                <span aria-hidden>🇬🇧</span> EN
+                            </button>
+                        </div>
+                    </nav>
                 </div>
-                <div
-                    v-if="isMinimalMobileBar"
-                    class="mt-4 flex items-center justify-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[11px]"
-                >
-                    <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition"
-                        :class="lang === 'id' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                        @click="setLang('id')"
-                    >
-                        <span aria-hidden>🇮🇩</span> ID
-                    </button>
-                    <button
-                        type="button"
-                        class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition"
-                        :class="lang === 'en' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                        @click="setLang('en')"
-                    >
-                        <span aria-hidden>🇬🇧</span> EN
-                    </button>
-                </div>
-            </nav>
-        </div>
+            </div>
+        </Teleport>
 
         <!-- Desktop brand dropdown -->
         <div

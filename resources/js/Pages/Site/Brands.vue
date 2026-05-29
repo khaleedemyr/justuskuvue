@@ -1,5 +1,6 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
+import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useSiteI18n } from '@/composables/useSiteI18n';
@@ -11,7 +12,7 @@ const props = defineProps({
     initialBrand: { type: String, default: '' },
     brands: { type: Array, default: () => [] },
 });
-const { t, lang, setLang, translateMenuLabel } = useSiteI18n();
+const { t } = useSiteI18n();
 
 function normalizeText(input) {
     return String(input || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ');
@@ -61,11 +62,6 @@ function facilityDisplayLabel(f) {
 }
 
 const selectedBrand = computed(() => normalizeKey(props.initialBrand || ''));
-const navItems = computed(() => {
-    if (props.menus.length > 0) return props.menus;
-    return ['HOME', 'BRAND', 'HOME SERVICE', 'JUSTUS APPS', "WHAT'S ON", 'CAREERS', 'RESERVATION', 'ABOUT'];
-});
-const translatedNavItems = computed(() => navItems.value.map((item) => translateMenuLabel(item)));
 
 const selectedBrandKey = computed(() => {
     if (!selectedBrand.value) return '';
@@ -99,8 +95,6 @@ const groups = computed(() => {
 });
 
 const activeKey = ref('');
-const brandMenuOpen = ref(false);
-let brandMenuCloseTimer = null;
 const lightboxImages = ref([]);
 const lightboxIndex = ref(0);
 
@@ -111,40 +105,6 @@ const heroSubtitle = computed(() => String(activeBrandMeta.value?.hero_subtitle 
 const heroMediaUrl = computed(() => String(activeBrandMeta.value?.hero_media_url || props.heroImageUrl || '').trim());
 const lightboxOpen = computed(() => lightboxImages.value.length > 0);
 const currentLightboxImage = computed(() => lightboxImages.value[lightboxIndex.value] || '');
-
-function menuToHref(label) {
-    const key = String(label || '').trim().toUpperCase();
-    if (key === 'HOME') return '/';
-    if (key.includes('HOME SERVICE')) return '/home-service';
-    if (key === 'BRAND') return '/brands';
-    if (key === 'JUSTUS APPS') return '/justus-apps';
-    if (key === "WHAT'S ON") return '/whats-on';
-    if (key === 'CAREERS') return '/careers';
-    if (key === 'RESERVATION') return '/reservation';
-    if (key === 'ABOUT') return '/about';
-    return '#';
-}
-
-function brandHref(brand) {
-    const key = String(brand?.slug || brand?.title || '').trim();
-    return key ? `/brands?brand=${encodeURIComponent(key)}` : '/brands';
-}
-
-function openBrandMenu() {
-    if (brandMenuCloseTimer) {
-        clearTimeout(brandMenuCloseTimer);
-        brandMenuCloseTimer = null;
-    }
-    brandMenuOpen.value = true;
-}
-
-function scheduleCloseBrandMenu() {
-    if (brandMenuCloseTimer) clearTimeout(brandMenuCloseTimer);
-    brandMenuCloseTimer = setTimeout(() => {
-        brandMenuOpen.value = false;
-        brandMenuCloseTimer = null;
-    }, 120);
-}
 
 function isHeroVideo() {
     return /\.(mp4|webm)(\?.*)?$/i.test(heroMediaUrl.value);
@@ -193,10 +153,6 @@ function onKeyDown(event) {
 onMounted(() => window.addEventListener('keydown', onKeyDown));
 onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKeyDown);
-    if (brandMenuCloseTimer) {
-        clearTimeout(brandMenuCloseTimer);
-        brandMenuCloseTimer = null;
-    }
 });
 </script>
 
@@ -228,59 +184,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
-                <div class="mx-auto flex w-full max-w-7xl items-center gap-3 overflow-x-auto px-4 py-3 [touch-action:pan-x] sm:justify-center sm:gap-4 sm:px-6 sm:py-4">
-                    <nav class="flex shrink-0 flex-nowrap items-center gap-x-4 whitespace-nowrap text-[12px] tracking-wide text-white/90 sm:text-[14px] md:gap-x-6 md:text-[16px]">
-                        <template v-for="(item, idx) in navItems" :key="item">
-                            <div
-                                v-if="String(item).trim().toUpperCase().includes('BRAND')"
-                                @mouseenter="openBrandMenu"
-                                @mouseleave="scheduleCloseBrandMenu"
-                            >
-                                <Link href="/brands" class="transition hover:text-white">{{ translatedNavItems[idx] }}</Link>
-                            </div>
-                            <Link v-else :href="menuToHref(item)" class="transition hover:text-white">
-                                {{ translatedNavItems[idx] }}
-                            </Link>
-                        </template>
-                    </nav>
-                    <div class="ml-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[10px] sm:ml-2 sm:text-[11px]">
-                        <button
-                            type="button"
-                            class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
-                            :class="lang === 'id' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                            @click="setLang('id')"
-                        >
-                            <span aria-hidden>🇮🇩</span> ID
-                        </button>
-                        <button
-                            type="button"
-                            class="inline-flex items-center gap-1 rounded-full px-2 py-1 transition"
-                            :class="lang === 'en' ? 'bg-white/20 text-white' : 'text-white/75 hover:text-white'"
-                            @click="setLang('en')"
-                        >
-                            <span aria-hidden>🇬🇧</span> EN
-                        </button>
-                    </div>
-                </div>
-                <div
-                    v-if="brandMenuOpen"
-                    class="absolute left-0 right-0 top-full z-[300] bg-[#3f3f43] shadow-xl"
-                    @mouseenter="openBrandMenu"
-                    @mouseleave="scheduleCloseBrandMenu"
-                >
-                    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-6 px-6 py-10">
-                        <Link
-                            v-for="brand in brandLogos"
-                            :key="brand.id"
-                            :href="brandHref(brand)"
-                            class="flex h-[80px] w-[160px] items-center justify-center px-1 transition hover:scale-105 md:h-[96px] md:w-[210px]"
-                        >
-                            <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
-                        </Link>
-                    </div>
-                </div>
-            </div>
+            <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />
         </section>
 
         <section class="border-t border-white/10 bg-[#3f3f43] px-6 py-10">

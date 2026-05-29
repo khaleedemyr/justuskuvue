@@ -1,6 +1,6 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
-import SiteNavbar from '@/Components/SiteNavbar.vue';
+import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
@@ -52,9 +52,7 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
                     <h1 class="text-4xl font-semibold tracking-[0.08em] md:text-6xl">{{ pageData?.title || 'OUR STORY' }}</h1>
                     <p class="mt-3 text-2xl italic text-white/90 md:text-4xl">{{ pageData?.subtitle || '' }}</p>
                 </div>
-                <div class="absolute inset-x-0 bottom-0 z-[260] w-full border-y border-white/10 bg-black/75 backdrop-blur-md">
-                    <SiteNavbar :menus="menus" :brand-logos="brandLogos" variant="bar" />
-                </div>
+                <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />
             </section>
 
             <section v-if="storySection" class="border-b border-white/10 bg-[#3f3f43] px-6 py-14 md:px-10 md:py-20">
