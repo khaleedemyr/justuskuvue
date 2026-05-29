@@ -25,6 +25,7 @@ const props = defineProps({
 });
 
 const mobileOpen = ref(false);
+const mobileBrandPickerOpen = ref(false);
 const brandMenuOpen = ref(false);
 let brandMenuCloseTimer = null;
 
@@ -89,31 +90,48 @@ function scheduleCloseBrandMenu() {
 
 function toggleMobileMenu() {
     mobileOpen.value = !mobileOpen.value;
+    if (mobileOpen.value) {
+        mobileBrandPickerOpen.value = false;
+    }
 }
 
 function closeMobileMenu() {
     mobileOpen.value = false;
 }
 
+function toggleMobileBrandPicker() {
+    mobileBrandPickerOpen.value = !mobileBrandPickerOpen.value;
+    if (mobileBrandPickerOpen.value) {
+        mobileOpen.value = false;
+    }
+}
+
+function closeMobileBrandPicker() {
+    mobileBrandPickerOpen.value = false;
+}
+
+function syncBodyScrollLock() {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = mobileOpen.value || mobileBrandPickerOpen.value ? 'hidden' : '';
+}
+
 defineExpose({
     toggleMobileMenu,
     closeMobileMenu,
+    toggleMobileBrandPicker,
+    closeMobileBrandPicker,
     mobileOpen,
+    mobileBrandPickerOpen,
 });
 
-watch(mobileOpen, (open) => {
-    if (typeof document === 'undefined') return;
-    document.body.style.overflow = open ? 'hidden' : '';
-});
+watch([mobileOpen, mobileBrandPickerOpen], syncBodyScrollLock);
 
 onBeforeUnmount(() => {
     if (brandMenuCloseTimer) {
         clearTimeout(brandMenuCloseTimer);
         brandMenuCloseTimer = null;
     }
-    if (typeof document !== 'undefined') {
-        document.body.style.overflow = '';
-    }
+    syncBodyScrollLock();
 });
 </script>
 
@@ -194,13 +212,16 @@ onBeforeUnmount(() => {
                 aria-label="Quick links"
             >
                 <template v-for="{ item, idx, label } in mobilePinnedEntries" :key="`pinned-${item}`">
-                    <Link
+                    <button
                         v-if="isBrandMenuItem(item)"
-                        href="/brands"
+                        type="button"
                         :class="mobilePinnedLinkClass"
+                        :aria-expanded="mobileBrandPickerOpen"
+                        aria-controls="site-mobile-brand-picker"
+                        @click="toggleMobileBrandPicker"
                     >
                         {{ label }}
-                    </Link>
+                    </button>
                     <Link
                         v-else
                         :href="menuToHref(item)"
@@ -298,27 +319,6 @@ onBeforeUnmount(() => {
                                 {{ label }}
                             </Link>
                         </template>
-                        <div v-if="brandLogos.length > 0" class="border-t border-white/10 pt-3">
-                            <p class="pb-2 text-xs font-semibold uppercase tracking-wider text-white/50">Brands</p>
-                            <div class="grid grid-cols-2 gap-3 pb-2">
-                                <Link
-                                    v-for="brand in brandLogos"
-                                    :key="brand.id"
-                                    :href="brandHref(brand)"
-                                    class="flex h-16 items-center justify-center rounded-lg bg-white/5 p-2 transition hover:bg-white/10"
-                                    @click="closeMobileMenu"
-                                >
-                                    <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
-                                </Link>
-                            </div>
-                            <Link
-                                href="/brands"
-                                class="block pb-1 text-xs uppercase tracking-wider text-amber-400/90"
-                                @click="closeMobileMenu"
-                            >
-                                View all brands →
-                            </Link>
-                        </div>
                         <div
                             v-if="isMinimalMobileBar || delegateMobileMenuButton"
                             class="mt-4 flex items-center justify-center gap-1 rounded-full border border-white/25 bg-black/30 p-1 text-[11px]"
@@ -341,6 +341,69 @@ onBeforeUnmount(() => {
                             </button>
                         </div>
                     </nav>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Mobile: brand picker (tap Brand in navbar) -->
+        <Teleport to="body">
+            <div
+                v-if="mobileBrandPickerOpen"
+                id="site-mobile-brand-picker"
+                class="fixed inset-0 z-[265] md:hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="site-mobile-brand-picker-title"
+            >
+                <button
+                    type="button"
+                    class="absolute inset-0 bg-black/75"
+                    aria-label="Close brand list"
+                    @click="closeMobileBrandPicker"
+                />
+                <div
+                    class="relative z-[266] mx-auto flex max-h-[min(88dvh,100%)] w-full max-w-lg flex-col overflow-hidden border-b border-white/10 bg-[#3f3f43] shadow-2xl"
+                >
+                    <div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                        <p id="site-mobile-brand-picker-title" class="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+                            Our Brands
+                        </p>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md p-2 text-white/90 transition hover:bg-white/10"
+                            aria-label="Close brand list"
+                            @click="closeMobileBrandPicker"
+                        >
+                            <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto px-4 py-6">
+                        <div v-if="brandLogos.length > 0" class="flex flex-wrap items-center justify-center gap-5">
+                            <Link
+                                v-for="brand in brandLogos"
+                                :key="brand.id"
+                                :href="brandHref(brand)"
+                                class="flex h-20 w-[140px] items-center justify-center rounded-lg bg-white/5 p-3 transition active:bg-white/10"
+                                @click="closeMobileBrandPicker"
+                            >
+                                <img
+                                    :src="brand.logo"
+                                    :alt="brand.title || 'Brand Logo'"
+                                    class="h-full w-full object-contain"
+                                />
+                            </Link>
+                        </div>
+                        <p v-else class="py-8 text-center text-sm text-white/60">No brands available.</p>
+                        <Link
+                            href="/brands"
+                            class="mt-6 block text-center text-xs font-semibold uppercase tracking-wider text-amber-400/90"
+                            @click="closeMobileBrandPicker"
+                        >
+                            View all brands →
+                        </Link>
+                    </div>
                 </div>
             </div>
         </Teleport>
