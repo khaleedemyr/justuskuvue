@@ -1,6 +1,7 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
+import SiteHeroBannerText from '@/Components/SiteHeroBannerText.vue';
 import { Link } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
@@ -158,28 +159,19 @@ onBeforeUnmount(() => {
                 <div v-else class="absolute inset-0 bg-gradient-to-b from-zinc-800 to-zinc-950" />
                 <div class="absolute inset-0 bg-black/50" />
 
-                <div class="relative z-10 flex flex-1 flex-col px-5 pb-20 pt-24 md:px-10 md:pb-24 md:pt-28">
-                    <div class="flex justify-end">
-                        <img src="/logohitam.png" alt="Justus Group" class="h-auto w-[140px] object-contain sm:w-[180px] md:w-[220px]" />
-                    </div>
-
-                    <div class="mt-auto flex flex-1 flex-col items-center justify-center text-center">
-                        <h1
-                            class="hero-title font-normal uppercase leading-tight tracking-[0.035em]"
-                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 44px"
+                <div class="relative z-10 flex min-h-0 flex-1 flex-col pb-20 md:pb-24">
+                    <SiteHeroBannerText
+                        :title="heroTitle"
+                        :subtitle="heroSubtitleParagraphs[0] || ''"
+                    >
+                        <p
+                            v-for="(para, idx) in heroSubtitleParagraphs.slice(1)"
+                            :key="`hero-sub-${idx}`"
+                            class="hero-subtitle mt-2 hidden font-normal italic text-white/90 md:mt-3 md:block"
                         >
-                            {{ heroTitle }}
-                        </h1>
-                        <div
-                            v-if="heroSubtitleParagraphs.length"
-                            class="hero-subtitle mt-3 max-w-4xl space-y-2 font-normal italic leading-tight text-white/90"
-                            style="font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: 20px"
-                        >
-                            <p v-for="(para, idx) in heroSubtitleParagraphs" :key="idx" class="whitespace-pre-line">
-                                {{ para }}
-                            </p>
-                        </div>
-                    </div>
+                            {{ para }}
+                        </p>
+                    </SiteHeroBannerText>
                 </div>
                 <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />
             </section>

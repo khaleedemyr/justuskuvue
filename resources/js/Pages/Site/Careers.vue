@@ -1,6 +1,7 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
+import SiteHeroBannerText from '@/Components/SiteHeroBannerText.vue';
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -53,14 +54,9 @@ function isCompanyCultureLine(line) {
                 <img v-else-if="pageData?.hero_image_url" :src="pageData.hero_image_url" alt="Careers Hero" class="absolute inset-0 h-full w-full object-cover" />
                 <div v-else class="absolute inset-0 bg-zinc-900" />
                 <div class="absolute inset-0 bg-black/45" />
-                <div class="relative z-10 flex flex-1 flex-col px-5 pb-20 pt-24 md:px-10 md:pb-24 md:pt-28">
-                    <div class="flex justify-end">
-                        <img src="/logohitam.png" alt="Justus Group" class="h-auto w-[140px] object-contain sm:w-[180px] md:w-[220px]" />
-                    </div>
-                    <div class="mt-auto flex flex-1 flex-col items-center justify-center text-center">
-                        <h1 class="text-4xl font-semibold tracking-[0.12em] md:text-6xl">{{ pageData?.title }}</h1>
-                        <p class="mt-3 text-xl italic text-white/90 md:text-4xl">{{ pageData?.subtitle }}</p>
-                    </div>
+
+                <div class="relative z-10 flex min-h-0 flex-1 flex-col pb-20 md:pb-24">
+                    <SiteHeroBannerText :title="pageData?.title || ''" :subtitle="pageData?.subtitle || ''" />
                 </div>
                 <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />
             </section>

@@ -1,6 +1,7 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
+import SiteHeroBannerText from '@/Components/SiteHeroBannerText.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { useSiteI18n } from '@/composables/useSiteI18n';
@@ -172,16 +173,8 @@ onBeforeUnmount(() => {
             <div v-else class="absolute inset-0 bg-zinc-900" />
             <div class="absolute inset-0 bg-black/40" />
 
-            <div class="relative z-10 flex flex-1 flex-col px-5 pb-20 pt-24 md:px-10 md:pb-24 md:pt-28">
-                <div class="flex justify-end">
-                    <img src="/logohitam.png" alt="Justus Group" class="h-auto w-[140px] object-contain sm:w-[180px] md:w-[220px]" />
-                </div>
-                <div class="mt-auto max-w-4xl">
-                    <h1 v-if="heroTitle" class="text-4xl font-light uppercase tracking-[0.14em] text-white md:text-6xl">{{ heroTitle }}</h1>
-                    <p v-if="heroSubtitle" class="mt-4 max-w-2xl whitespace-pre-line text-sm font-light leading-7 text-white/90 md:text-base md:leading-8">
-                        {{ heroSubtitle }}
-                    </p>
-                </div>
+            <div class="relative z-10 flex min-h-0 flex-1 flex-col pb-20 md:pb-24">
+                <SiteHeroBannerText :title="heroTitle" :subtitle="heroSubtitle" />
             </div>
 
             <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />

@@ -1,17 +1,14 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteHeroNavBar from '@/Components/SiteHeroNavBar.vue';
-import { Link } from '@inertiajs/vue3';
+import SiteHeroBannerText from '@/Components/SiteHeroBannerText.vue';
 import { computed } from 'vue';
-import { useSiteI18n } from '@/composables/useSiteI18n';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
     brandLogos: { type: Array, default: () => [] },
     pageData: { type: Object, default: () => ({}) },
 });
-
-const { t } = useSiteI18n();
 
 const sections = computed(() => (Array.isArray(props.pageData?.sections) ? props.pageData.sections : []));
 const storySection = computed(() => sections.value.find((s) => s?.id === 'our-story') || sections.value[0] || null);
@@ -22,7 +19,7 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
 <template>
     <SiteLayout title="About" :menus="menus" :brand-logos="brandLogos" :show-header="false">
         <main class="min-h-[100dvh] bg-[#3f3f43] text-white">
-            <section class="relative min-h-[44vh] overflow-visible border-b border-white/10 pb-16">
+            <section class="relative flex h-[100dvh] min-h-[44vh] flex-col overflow-visible border-b border-white/10 md:h-auto md:min-h-[44vh]">
                 <template v-if="pageData?.hero_image_url">
                     <img
                         :src="pageData.hero_image_url"
@@ -39,18 +36,11 @@ const bottomSection = computed(() => sections.value.find((s) => s?.id === 'visio
                 <div v-else class="absolute inset-0 bg-zinc-900" />
                 <div class="absolute inset-0 bg-black/45" />
 
-                <div class="relative z-10 mx-auto flex min-h-[44vh] w-full max-w-7xl flex-col items-center justify-center px-6 py-12 text-center">
-                    <div class="mb-6 w-full text-left">
-                        <Link
-                            href="/"
-                            class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/35 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/90 transition hover:border-white/60 hover:bg-black/55 hover:text-white md:text-sm"
-                        >
-                            <span aria-hidden>←</span>
-                            {{ t('backToHome') }}
-                        </Link>
-                    </div>
-                    <h1 class="text-4xl font-semibold tracking-[0.08em] md:text-6xl">{{ pageData?.title || 'OUR STORY' }}</h1>
-                    <p class="mt-3 text-2xl italic text-white/90 md:text-4xl">{{ pageData?.subtitle || '' }}</p>
+                <div class="relative z-10 flex min-h-0 flex-1 flex-col pb-20 md:pb-24">
+                    <SiteHeroBannerText
+                        :title="pageData?.title || 'OUR STORY'"
+                        :subtitle="pageData?.subtitle || ''"
+                    />
                 </div>
                 <SiteHeroNavBar :menus="menus" :brand-logos="brandLogos" />
             </section>
