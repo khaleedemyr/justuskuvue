@@ -23,12 +23,53 @@ function normalizeKey(input) {
     return normalizeText(input).replace(/\s+/g, '-');
 }
 
-function outletFamilyKey(outletName) {
+function brandLogoKey(logo) {
+    return normalizeKey(logo?.slug || logo?.title || '');
+}
+
+/** Deteksi keluarga brand dari nama outlet (urutan: spesifik dulu). */
+function detectOutletFamily(outletName) {
     const n = normalizeText(outletName);
-    if (n.includes('tempayan')) return 'tempayan-indonesian-bistro';
-    if (n.includes('burger')) return 'justus-burger-and-steak';
-    if (n.includes('asian grill express')) return 'asian-grill-express';
-    if (n.includes('justus')) return 'justus-steakhouse';
+    if (!n) return null;
+    if (n.includes('tempayan')) return 'tempayan';
+    if (n.includes('melt')) return 'melt';
+    if (n.includes('asian grill') || n.includes('asian-grill') || /\bage\b/.test(n)) return 'asian-grill';
+    if (n.includes('burger')) return 'burger';
+    if (n.includes('steakhouse') || n.includes('justus')) return 'steakhouse';
+    return null;
+}
+
+/** Cocokkan keluarga outlet ke key grup dari brandLogos (slug/title CMS, bukan slug hardcoded). */
+function resolveOutletBrandKey(outletName, brandLogos) {
+    const family = detectOutletFamily(outletName);
+    if (!family) return '';
+
+    for (const logo of brandLogos) {
+        const key = brandLogoKey(logo);
+        if (!key) continue;
+
+        const title = normalizeText(logo?.title || '');
+        const slug = normalizeKey(logo?.slug || '');
+
+        if (family === 'tempayan' && (title.includes('tempayan') || slug.includes('tempayan'))) return key;
+        if (family === 'melt' && (title.includes('melt') || slug.includes('melt'))) return key;
+        if (
+            family === 'asian-grill'
+            && ((title.includes('asian') && title.includes('grill')) || slug.includes('asian-grill'))
+        ) {
+            return key;
+        }
+        if (family === 'burger' && (title.includes('burger') || slug.includes('burger'))) return key;
+        if (family === 'steakhouse') {
+            const isBurgerBrand = title.includes('burger') || slug.includes('burger');
+            const isSteakhouseBrand =
+                (title.includes('justus') && title.includes('steakhouse'))
+                || slug.includes('steakhouse')
+                || (title.includes('justus') && !isBurgerBrand && !title.includes('asian') && !title.includes('melt') && !title.includes('tempayan'));
+            if (isSteakhouseBrand) return key;
+        }
+    }
+
     return '';
 }
 
@@ -87,9 +128,9 @@ const groups = computed(() => {
 
     const byKey = new Map(base.map((g) => [g.key, g]));
     props.brands.forEach((outlet) => {
-        const family = outletFamilyKey(outlet?.name || '');
-        if (family && byKey.has(family)) {
-            byKey.get(family).items.push(outlet);
+        const familyKey = resolveOutletBrandKey(outlet?.name || '', props.brandLogos);
+        if (familyKey && byKey.has(familyKey)) {
+            byKey.get(familyKey).items.push(outlet);
         }
     });
     return base;
@@ -181,14 +222,14 @@ onBeforeUnmount(() => {
         </section>
 
         <section class="border-t border-white/10 bg-[#3f3f43] px-6 py-10">
-            <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-6">
+            <div class="mx-auto flex w-full max-w-6xl flex-nowrap items-center justify-center gap-3 overflow-x-auto px-1 py-1 sm:gap-4 md:gap-5">
                 <button
                     v-for="g in groups"
                     :key="g.key"
                     type="button"
                     :title="g.label"
                     @click="activeKey = g.key"
-                    class="flex h-[80px] w-[160px] items-center justify-center px-1 transition md:h-[96px] md:w-[210px]"
+                    class="flex h-[72px] w-[120px] shrink-0 items-center justify-center px-1 transition sm:h-[80px] sm:w-[140px] md:h-[96px] md:w-[180px] lg:w-[210px]"
                     :class="activeKey === g.key ? 'opacity-100' : 'opacity-80 hover:scale-105 hover:opacity-100'"
                 >
                     <img v-if="g.logo" :src="g.logo" :alt="g.label" class="h-full w-full object-contain" />
