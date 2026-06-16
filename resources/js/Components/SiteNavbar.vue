@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
             @mouseenter="openBrandMenu"
             @mouseleave="scheduleCloseBrandMenu"
         >
-            <div class="mx-auto flex max-w-6xl flex-nowrap items-center justify-center gap-3 overflow-x-auto px-4 py-8 sm:gap-4 md:gap-5 md:px-6 md:py-10">
+            <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 py-8 sm:gap-4 md:gap-5 md:px-6 md:py-10">
                 <Link
                     v-for="brand in brandLogos"
                     :key="brand.id"

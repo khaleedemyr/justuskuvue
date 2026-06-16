@@ -225,7 +225,7 @@ onBeforeUnmount(() => {
         </section>
 
         <section class="border-t border-white/10 bg-[#3f3f43] px-6 py-10">
-            <div class="mx-auto flex w-full max-w-6xl flex-nowrap items-center justify-center gap-3 overflow-x-auto px-1 py-1 sm:gap-4 md:gap-5">
+            <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-3 px-1 py-1 sm:gap-4 md:gap-5">
                 <button
                     v-for="g in groups"
                     :key="g.key"
