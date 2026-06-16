@@ -225,14 +225,14 @@ onBeforeUnmount(() => {
         </section>
 
         <section class="border-t border-white/10 bg-[#3f3f43] px-6 py-10">
-            <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-3 px-1 py-1 sm:gap-4 md:gap-5">
+            <div class="mx-auto grid w-full max-w-6xl grid-cols-2 items-center gap-3 px-1 py-1 sm:grid-cols-3 sm:gap-4 md:grid-cols-5 md:gap-5">
                 <button
                     v-for="g in groups"
                     :key="g.key"
                     type="button"
                     :title="g.label"
                     @click="activeKey = g.key"
-                    class="flex h-[72px] w-[120px] shrink-0 items-center justify-center px-1 transition sm:h-[80px] sm:w-[140px] md:h-[96px] md:w-[180px] lg:w-[210px]"
+                    class="flex h-[72px] w-full items-center justify-center px-1 transition sm:h-[80px] md:h-[96px]"
                     :class="activeKey === g.key ? 'opacity-100' : 'opacity-80 hover:scale-105 hover:opacity-100'"
                 >
                     <img v-if="g.logo" :src="g.logo" :alt="g.label" class="h-full w-full object-contain" />

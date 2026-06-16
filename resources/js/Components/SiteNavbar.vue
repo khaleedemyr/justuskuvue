@@ -411,12 +411,12 @@ onBeforeUnmount(() => {
             @mouseenter="openBrandMenu"
             @mouseleave="scheduleCloseBrandMenu"
         >
-            <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 px-4 py-8 sm:gap-4 md:gap-5 md:px-6 md:py-10">
+            <div class="mx-auto grid w-full max-w-6xl grid-cols-5 items-center gap-5 px-6 py-10">
                 <Link
                     v-for="brand in brandLogos"
                     :key="brand.id"
                     :href="brandHref(brand)"
-                    class="flex h-[72px] w-[120px] shrink-0 items-center justify-center px-1 transition hover:scale-105 sm:h-[80px] sm:w-[140px] md:h-[96px] md:w-[180px] lg:w-[210px]"
+                    class="flex h-[96px] w-full items-center justify-center px-1 transition hover:scale-105"
                 >
                     <img :src="brand.logo" :alt="brand.title || 'Brand Logo'" class="h-full w-full object-contain" />
                 </Link>
