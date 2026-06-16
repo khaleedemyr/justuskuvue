@@ -27,7 +27,7 @@ const promoStep = ref(0);
 let promoAutoplayTimer = null;
 const promoViewportRef = ref(null);
 const promoViewportWidth = ref(0);
-/** Desktop md+: tampil 3 banner per slide */
+/** Desktop md+: tampil 2 banner per slide */
 const isDesktopPromoGrid = ref(false);
 let promoMqCleanup = null;
 const { t } = useSiteI18n();
@@ -39,8 +39,8 @@ const promoSlidesList = computed(() =>
 const promoDesktopPages = computed(() => {
     const list = promoSlidesList.value;
     const pages = [];
-    for (let i = 0; i < list.length; i += 3) {
-        pages.push(list.slice(i, i + 3));
+    for (let i = 0; i < list.length; i += 2) {
+        pages.push(list.slice(i, i + 2));
     }
     return pages;
 });
@@ -49,7 +49,7 @@ const promoStepCount = computed(() => {
     const n = promoSlidesList.value.length;
     if (n === 0) return 0;
     if (isDesktopPromoGrid.value) {
-        return Math.ceil(n / 3);
+        return Math.ceil(n / 2);
     }
     return n;
 });
@@ -367,7 +367,7 @@ onBeforeUnmount(() => {
             <div aria-hidden class="shrink-0" :style="{ height: pinned ? `${navHeight}px` : '0px' }" />
 
             <section v-if="promoSlidesList.length > 0" class="relative w-full max-w-none border-y border-white/10 bg-[#1b1b1f]">
-                <!-- Mobile: 1 banner per slide; Desktop md+: 3 banner per slide -->
+                <!-- Mobile: 1 banner per slide; Desktop md+: 2 banner per slide -->
                 <div class="relative w-full">
                     <div ref="promoViewportRef" class="relative overflow-hidden">
                         <!-- Mobile strip -->
@@ -414,7 +414,7 @@ onBeforeUnmount(() => {
                                 :key="`promo-page-${pageIdx}`"
                                 class="min-w-full shrink-0 px-1 py-2 md:px-1 md:py-2"
                             >
-                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-3 gap-1 md:gap-1 lg:gap-1.5">
+                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-2 gap-1 md:gap-1.5">
                                     <div
                                         v-for="slide in page"
                                         :key="slide.id"
@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
                                             <img
                                                 :src="slide.image"
                                                 :alt="slide.title || 'Promo'"
-                                                class="block h-[min(34vh,320px)] w-full bg-black object-contain object-center lg:h-[min(38vh,380px)]"
+                                                class="block h-[min(36vh,360px)] w-full object-cover object-center lg:h-[min(40vh,420px)]"
                                                 loading="lazy"
                                             />
                                         </a>
@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
                                             v-else
                                             :src="slide.image"
                                             :alt="slide.title || 'Promo'"
-                                            class="block h-[min(34vh,320px)] w-full bg-black object-contain object-center lg:h-[min(38vh,380px)]"
+                                            class="block h-[min(36vh,360px)] w-full object-cover object-center lg:h-[min(40vh,420px)]"
                                             loading="lazy"
                                         />
                                     </div>
