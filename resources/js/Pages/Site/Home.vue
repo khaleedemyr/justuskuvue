@@ -54,21 +54,20 @@ const promoStepCount = computed(() => {
     return n;
 });
 
-const promoMobileTranslate = computed(() => {
-    const total = promoSlidesList.value.length;
-    if (total <= 0) return 0;
-    return promoStep.value * (100 / total);
-});
-
-const promoDesktopTranslate = computed(() => {
-    const total = promoDesktopPages.value.length;
-    if (total <= 0) return 0;
-    return promoStep.value * (100 / total);
-});
-
 const promoMobileTranslatePx = computed(() => {
     if (promoViewportWidth.value <= 0) return 0;
     return promoStep.value * promoViewportWidth.value;
+});
+
+const promoDesktopTranslatePx = computed(() => {
+    if (promoViewportWidth.value <= 0) return 0;
+    return promoStep.value * promoViewportWidth.value;
+});
+
+const promoDesktopTrackWidthPx = computed(() => {
+    const pages = promoDesktopPages.value.length;
+    if (pages <= 0 || promoViewportWidth.value <= 0) return 0;
+    return pages * promoViewportWidth.value;
 });
 
 watch([promoSlidesList, promoStepCount], () => {
@@ -80,6 +79,10 @@ watch([promoSlidesList, promoStepCount], () => {
     if (promoStep.value >= c) {
         promoStep.value = 0;
     }
+});
+
+watch(isDesktopPromoGrid, () => {
+    promoStep.value = 0;
 });
 
 const pairedBlocks = computed(() => {
@@ -366,10 +369,10 @@ onBeforeUnmount(() => {
             </div>
             <div aria-hidden class="shrink-0" :style="{ height: pinned ? `${navHeight}px` : '0px' }" />
 
-            <section v-if="promoSlidesList.length > 0" class="relative w-full max-w-none border-y border-white/10 bg-[#1b1b1f]">
+            <section v-if="promoSlidesList.length > 0" class="relative w-full max-w-none border-y border-white/10 bg-black">
                 <!-- Mobile: 1 banner per slide; Desktop md+: 2 banner per slide -->
                 <div class="relative w-full">
-                    <div ref="promoViewportRef" class="relative overflow-hidden">
+                    <div ref="promoViewportRef" class="relative w-full overflow-hidden">
                         <!-- Mobile strip -->
                         <div
                             class="flex transition-transform duration-500 ease-out md:hidden"
@@ -404,21 +407,28 @@ onBeforeUnmount(() => {
                                 />
                             </div>
                         </div>
-                        <!-- Desktop: halaman berisi grid 3 kolom -->
+                        <!-- Desktop: 1 halaman = 2 banner, geser per viewport (px) -->
                         <div
                             class="hidden transition-transform duration-500 ease-out md:flex"
-                            :style="{ transform: `translateX(-${promoDesktopTranslate}%)` }"
+                            :style="{
+                                width: `${promoDesktopTrackWidthPx}px`,
+                                transform: `translate3d(-${promoDesktopTranslatePx}px, 0, 0)`,
+                            }"
                         >
                             <div
                                 v-for="(page, pageIdx) in promoDesktopPages"
                                 :key="`promo-page-${pageIdx}`"
-                                class="min-w-full shrink-0 px-1 py-2 md:px-1 md:py-2"
+                                class="shrink-0"
+                                :style="{ width: `${promoViewportWidth}px` }"
                             >
-                                <div class="mx-auto grid w-full max-w-[1920px] grid-cols-2 gap-1 md:gap-1.5">
+                                <div
+                                    class="grid w-full items-start gap-1.5"
+                                    :class="page.length === 1 ? 'grid-cols-1' : 'grid-cols-2'"
+                                >
                                     <div
                                         v-for="slide in page"
                                         :key="slide.id"
-                                        class="flex min-h-0 min-w-0 flex-col justify-center"
+                                        class="min-w-0"
                                     >
                                         <a
                                             v-if="slide.link_url"
@@ -430,7 +440,7 @@ onBeforeUnmount(() => {
                                             <img
                                                 :src="slide.image"
                                                 :alt="slide.title || 'Promo'"
-                                                class="block h-[min(36vh,360px)] w-full object-cover object-center lg:h-[min(40vh,420px)]"
+                                                class="block h-auto w-full"
                                                 loading="lazy"
                                             />
                                         </a>
@@ -438,7 +448,7 @@ onBeforeUnmount(() => {
                                             v-else
                                             :src="slide.image"
                                             :alt="slide.title || 'Promo'"
-                                            class="block h-[min(36vh,360px)] w-full object-cover object-center lg:h-[min(40vh,420px)]"
+                                            class="block h-auto w-full"
                                             loading="lazy"
                                         />
                                     </div>
