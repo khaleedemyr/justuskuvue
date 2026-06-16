@@ -17,10 +17,13 @@ class YmsoftErpClient
         return preg_replace('#/api$#', '', $this->apiBaseUrl()) ?: $this->apiBaseUrl();
     }
 
-    public function get(string $path): array
+    public function get(string $path, array $query = []): array
     {
         try {
             $url = $this->apiBaseUrl().'/'.ltrim($path, '/');
+            if ($query !== []) {
+                $url .= '?'.http_build_query($query);
+            }
             $response = Http::timeout(20)
                 ->acceptJson()
                 ->get($url);

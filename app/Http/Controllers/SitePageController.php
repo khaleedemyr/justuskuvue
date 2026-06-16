@@ -40,7 +40,7 @@ class SitePageController extends Controller
     {
         $nav = $this->baseNavData();
         $banners = $this->erp->get('web-profile/banners');
-        $brandsPayload = $this->erp->get('mobile/member/brands');
+        $brandsPayload = $this->erp->get('mobile/member/brands', ['include_fc' => 1]);
         $list = is_array($brandsPayload['data'] ?? null) ? $brandsPayload['data'] : [];
         $brands = collect($list)->map(function ($item) {
             if (! is_array($item)) {

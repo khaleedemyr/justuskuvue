@@ -35,7 +35,10 @@ function detectOutletFamily(outletName) {
     if (n.includes('melt')) return 'melt';
     if (n.includes('asian grill') || n.includes('asian-grill') || /\bage\b/.test(n)) return 'asian-grill';
     if (n.includes('burger')) return 'burger';
-    if (n.includes('steakhouse') || n.includes('justus')) return 'steakhouse';
+    if (n.includes('justus')) {
+        return n.includes('steak') ? 'steakhouse' : 'burger';
+    }
+    if (n.includes('steakhouse')) return 'steakhouse';
     return null;
 }
 
