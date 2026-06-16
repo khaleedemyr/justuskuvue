@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
                                             <img
                                                 :src="slide.image"
                                                 :alt="slide.title || 'Promo'"
-                                                class="block h-[min(34vh,320px)] w-full object-cover object-center lg:h-[min(38vh,380px)]"
+                                                class="block h-[min(34vh,320px)] w-full bg-black object-contain object-center lg:h-[min(38vh,380px)]"
                                                 loading="lazy"
                                             />
                                         </a>
@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
                                             v-else
                                             :src="slide.image"
                                             :alt="slide.title || 'Promo'"
-                                            class="block h-[min(34vh,320px)] w-full object-cover object-center lg:h-[min(38vh,380px)]"
+                                            class="block h-[min(34vh,320px)] w-full bg-black object-contain object-center lg:h-[min(38vh,380px)]"
                                             loading="lazy"
                                         />
                                     </div>
