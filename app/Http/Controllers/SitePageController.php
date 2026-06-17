@@ -99,8 +99,12 @@ class SitePageController extends Controller
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:30',
+            'domicile' => 'required|string|max:255',
+            'last_education' => 'required|string|max:255',
+            'birth_date' => 'required|date|before:today',
             'cover_letter' => 'nullable|string',
             'cv_file' => 'required|file|mimes:pdf,doc,docx|max:5120',
+            'photo_file' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
             'recaptcha_token' => 'required|string|max:4096',
             'form_started_at' => 'required|integer',
             'company_website' => 'nullable|string|max:255',
@@ -143,9 +147,13 @@ class SitePageController extends Controller
                 'full_name' => $data['full_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
+                'domicile' => $data['domicile'],
+                'last_education' => $data['last_education'],
+                'birth_date' => $data['birth_date'],
                 'cover_letter' => $data['cover_letter'] ?? '',
             ],
             $request->file('cv_file'),
+            $request->file('photo_file'),
         );
 
         if (($result['success'] ?? false) === true) {

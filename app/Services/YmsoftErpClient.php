@@ -61,8 +61,12 @@ class YmsoftErpClient
      *
      * @return array{success: bool, message?: string, raw_status?: int}
      */
-    public function postJobVacancyApply(int $jobId, array $fields, \Illuminate\Http\UploadedFile $cvFile): array
-    {
+    public function postJobVacancyApply(
+        int $jobId,
+        array $fields,
+        \Illuminate\Http\UploadedFile $cvFile,
+        \Illuminate\Http\UploadedFile $photoFile,
+    ): array {
         $url = $this->webBaseUrl().'/api/job-vacancies/'.$jobId.'/apply';
         try {
             $cvPath = method_exists($cvFile, 'path') ? $cvFile->path() : $cvFile->getRealPath();
@@ -74,16 +78,33 @@ class YmsoftErpClient
                 ];
             }
 
+            $photoPath = method_exists($photoFile, 'path') ? $photoFile->path() : $photoFile->getRealPath();
+            $photoContents = @file_get_contents((string) $photoPath);
+            if ($photoContents === false) {
+                return [
+                    'success' => false,
+                    'message' => 'Gagal membaca file foto.',
+                ];
+            }
+
             $response = Http::timeout(120)
                 ->attach(
                     'cv_file',
                     $cvContents,
                     $cvFile->getClientOriginalName(),
                 )
+                ->attach(
+                    'photo_file',
+                    $photoContents,
+                    $photoFile->getClientOriginalName(),
+                )
                 ->post($url, [
                     'full_name' => $fields['full_name'],
                     'email' => $fields['email'],
                     'phone' => $fields['phone'],
+                    'domicile' => $fields['domicile'],
+                    'last_education' => $fields['last_education'],
+                    'birth_date' => $fields['birth_date'],
                     'cover_letter' => $fields['cover_letter'] ?? '',
                 ]);
 

@@ -25,12 +25,18 @@ const successMsg = ref('');
 const fullName = ref('');
 const email = ref('');
 const phone = ref('');
+const domicile = ref('');
+const lastEducation = ref('');
+const birthDate = ref('');
 const coverLetter = ref('');
 const cvFile = ref(null);
+const photoFile = ref(null);
 
 const title = computed(() =>
     props.scope === 'head_office' ? 'HEAD OFFICE VACANCIES' : 'OUTLET VACANCIES',
 );
+
+const maxBirthDate = computed(() => new Date().toISOString().slice(0, 10));
 
 function formatDate(iso) {
     if (!iso) return '-';
@@ -54,8 +60,12 @@ function openApply(job) {
     fullName.value = '';
     email.value = '';
     phone.value = '';
+    domicile.value = '';
+    lastEducation.value = '';
+    birthDate.value = '';
     coverLetter.value = '';
     cvFile.value = null;
+    photoFile.value = null;
     recaptchaToken.value = '';
     honeypot.value = '';
     formStartedAt.value = Math.floor(Date.now() / 1000);
@@ -72,9 +82,14 @@ function onCvChange(e) {
     cvFile.value = f || null;
 }
 
+function onPhotoChange(e) {
+    const f = e.target.files?.[0];
+    photoFile.value = f || null;
+}
+
 async function onSubmit(e) {
     e.preventDefault();
-    if (!selectedJob.value || !cvFile.value) return;
+    if (!selectedJob.value || !cvFile.value || !photoFile.value) return;
     if (recaptchaSiteKey.value && !await executeRecaptcha('career_apply')) {
         errorMsg.value = 'Captcha wajib diverifikasi.';
         return;
@@ -89,8 +104,12 @@ async function onSubmit(e) {
     fd.append('full_name', fullName.value);
     fd.append('email', email.value);
     fd.append('phone', phone.value);
+    fd.append('domicile', domicile.value);
+    fd.append('last_education', lastEducation.value);
+    fd.append('birth_date', birthDate.value);
     fd.append('cover_letter', coverLetter.value);
     fd.append('cv_file', cvFile.value);
+    fd.append('photo_file', photoFile.value);
     if (recaptchaToken.value) {
         fd.append('recaptcha_token', recaptchaToken.value);
     }
@@ -109,8 +128,12 @@ async function onSubmit(e) {
         fullName.value = '';
         email.value = '';
         phone.value = '';
+        domicile.value = '';
+        lastEducation.value = '';
+        birthDate.value = '';
         coverLetter.value = '';
         cvFile.value = null;
+        photoFile.value = null;
     } catch (err) {
         const msg = err.response?.data?.message;
         errorMsg.value = typeof msg === 'string' ? msg : 'Gagal kirim lamaran.';
@@ -228,7 +251,7 @@ async function executeRecaptcha(action) {
                 class="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4"
                 @click="closeModal"
             >
-                <div class="w-full max-w-xl rounded-xl border border-white/15 bg-[#2f2f35] p-5" @click.stop>
+                <div class="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl border border-white/15 bg-[#2f2f35] p-5" @click.stop>
                     <div class="mb-4 flex items-start justify-between gap-3">
                         <h3 class="text-lg font-semibold">{{ selectedJob.position }}</h3>
                         <button type="button" class="text-white/70 hover:text-white" @click="closeModal">✕</button>
@@ -256,6 +279,31 @@ async function executeRecaptcha(action) {
                             placeholder="Nomor HP"
                             class="w-full rounded border border-white/20 bg-[#24242a] px-3 py-2 text-sm text-white placeholder:text-white/50"
                         />
+                        <input
+                            v-model="domicile"
+                            name="domicile"
+                            required
+                            placeholder="Domisili (kota/kabupaten)"
+                            class="w-full rounded border border-white/20 bg-[#24242a] px-3 py-2 text-sm text-white placeholder:text-white/50"
+                        />
+                        <input
+                            v-model="lastEducation"
+                            name="last_education"
+                            required
+                            placeholder="Pendidikan terakhir (contoh: S1 Manajemen)"
+                            class="w-full rounded border border-white/20 bg-[#24242a] px-3 py-2 text-sm text-white placeholder:text-white/50"
+                        />
+                        <div>
+                            <label class="mb-1 block text-xs text-white/70">Tanggal lahir</label>
+                            <input
+                                v-model="birthDate"
+                                name="birth_date"
+                                type="date"
+                                required
+                                :max="maxBirthDate"
+                                class="w-full rounded border border-white/20 bg-[#24242a] px-3 py-2 text-sm text-white"
+                            />
+                        </div>
                         <textarea
                             v-model="coverLetter"
                             name="cover_letter"
@@ -263,13 +311,26 @@ async function executeRecaptcha(action) {
                             placeholder="Pesan singkat / cover letter"
                             class="w-full rounded border border-white/20 bg-[#24242a] px-3 py-2 text-sm text-white placeholder:text-white/50"
                         />
-                        <input
-                            type="file"
-                            required
-                            accept=".pdf,.doc,.docx"
-                            class="w-full text-sm text-white/90 file:mr-3 file:rounded file:border-0 file:bg-white/15 file:px-3 file:py-2 file:text-white"
-                            @change="onCvChange"
-                        />
+                        <div>
+                            <label class="mb-1 block text-xs text-white/70">CV (PDF/DOC/DOCX)</label>
+                            <input
+                                type="file"
+                                required
+                                accept=".pdf,.doc,.docx"
+                                class="w-full text-sm text-white/90 file:mr-3 file:rounded file:border-0 file:bg-white/15 file:px-3 file:py-2 file:text-white"
+                                @change="onCvChange"
+                            />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs text-white/70">Foto terbaru (JPG/PNG)</label>
+                            <input
+                                type="file"
+                                required
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                class="w-full text-sm text-white/90 file:mr-3 file:rounded file:border-0 file:bg-white/15 file:px-3 file:py-2 file:text-white"
+                                @change="onPhotoChange"
+                            />
+                        </div>
                         <input
                             v-model="honeypot"
                             type="text"
