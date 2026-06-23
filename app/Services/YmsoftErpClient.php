@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -19,6 +20,49 @@ class YmsoftErpClient
 
     public function get(string $path, array $query = []): array
     {
+        if (! $this->cacheEnabled()) {
+            return $this->fetchApiGet($path, $query) ?? [];
+        }
+
+        $cacheKey = $this->cacheKey('api', $path, $query);
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $result = $this->fetchApiGet($path, $query);
+        if ($result !== null) {
+            Cache::put($cacheKey, $result, $this->cacheTtl($path));
+        }
+
+        return $result ?? [];
+    }
+
+    public function getFromWeb(string $path): array
+    {
+        if (! $this->cacheEnabled()) {
+            return $this->fetchWebGet($path) ?? [];
+        }
+
+        $cacheKey = $this->cacheKey('web', $path);
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $result = $this->fetchWebGet($path);
+        if ($result !== null) {
+            Cache::put($cacheKey, $result, $this->cacheTtl($path));
+        }
+
+        return $result ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>|null Null when the HTTP request fails (not cached).
+     */
+    private function fetchApiGet(string $path, array $query = []): ?array
+    {
         try {
             $url = $this->apiBaseUrl().'/'.ltrim($path, '/');
             if ($query !== []) {
@@ -28,17 +72,21 @@ class YmsoftErpClient
                 ->acceptJson()
                 ->get($url);
             if (! $response->ok()) {
-                return [];
+                return null;
             }
 
             $json = $response->json();
+
             return is_array($json) ? $json : [];
         } catch (Throwable) {
-            return [];
+            return null;
         }
     }
 
-    public function getFromWeb(string $path): array
+    /**
+     * @return array<string, mixed>|null Null when the HTTP request fails (not cached).
+     */
+    private function fetchWebGet(string $path): ?array
     {
         try {
             $url = $this->webBaseUrl().'/'.ltrim($path, '/');
@@ -46,14 +94,46 @@ class YmsoftErpClient
                 ->acceptJson()
                 ->get($url);
             if (! $response->ok()) {
-                return [];
+                return null;
             }
 
             $json = $response->json();
+
             return is_array($json) ? $json : [];
         } catch (Throwable) {
-            return [];
+            return null;
         }
+    }
+
+    private function cacheEnabled(): bool
+    {
+        return (bool) config('services.ymsofterp.cache_enabled', false);
+    }
+
+    /**
+     * @param  array<string, scalar|null>  $query
+     */
+    private function cacheKey(string $channel, string $path, array $query = []): string
+    {
+        $baseUrl = $channel === 'web' ? $this->webBaseUrl() : $this->apiBaseUrl();
+        $normalizedPath = ltrim($path, '/');
+        $queryString = $query !== [] ? '?'.http_build_query($query) : '';
+
+        return 'ymsoft_erp:'.$channel.':'.md5($baseUrl.'/'.$normalizedPath.$queryString);
+    }
+
+    private function cacheTtl(string $path): int
+    {
+        $normalizedPath = ltrim($path, '/');
+        $shortPaths = config('services.ymsofterp.cache_short_paths', []);
+
+        foreach ($shortPaths as $shortPath) {
+            if (str_starts_with($normalizedPath, ltrim((string) $shortPath, '/'))) {
+                return max(1, (int) config('services.ymsofterp.cache_ttl_short_seconds', 300));
+            }
+        }
+
+        return max(1, (int) config('services.ymsofterp.cache_ttl_seconds', 600));
     }
 
     /**
@@ -134,4 +214,3 @@ class YmsoftErpClient
         }
     }
 }
-

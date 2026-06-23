@@ -37,6 +37,13 @@ return [
 
     'ymsofterp' => [
         'api_base_url' => env('YMSOFTERP_API_URL', 'http://127.0.0.1:8000/api'),
+        'cache_enabled' => env('YMSOFTERP_CACHE_ENABLED', env('APP_ENV') === 'production'),
+        'cache_ttl_seconds' => (int) env('YMSOFTERP_CACHE_TTL', 600),
+        'cache_ttl_short_seconds' => (int) env('YMSOFTERP_CACHE_TTL_SHORT', 300),
+        'cache_short_paths' => [
+            'mobile/member/whats-on',
+            'api/job-vacancies',
+        ],
         /** E.164 digits for wa.me (same as Next PUBLIC_RESERVATION_WA / CALL_CENTER_WA) */
         'reservation_call_center_wa' => env('RESERVATION_CALL_CENTER_WA', env('CALL_CENTER_WA', '')),
         /**
