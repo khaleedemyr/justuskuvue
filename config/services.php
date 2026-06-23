@@ -46,6 +46,11 @@ return [
         ],
         /** E.164 digits for wa.me (same as Next PUBLIC_RESERVATION_WA / CALL_CENTER_WA) */
         'reservation_call_center_wa' => env('RESERVATION_CALL_CENTER_WA', env('CALL_CENTER_WA', '')),
+        'reservation_maintenance_enabled' => env('RESERVATION_MAINTENANCE_ENABLED', true),
+        'reservation_maintenance_api_message' => env(
+            'RESERVATION_MAINTENANCE_API_MESSAGE',
+            'Our online reservation service is temporarily unavailable. Please try again later.'
+        ),
         /**
          * Comma-separated allowlist for CMS-driven external links (CTA/menu).
          * Example: justus.co.id,www.justus.co.id,staging.justus.co.id

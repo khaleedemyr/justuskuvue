@@ -49,6 +49,17 @@ const messages = {
         downloadAppCta: 'UNDUH APLIKASI DAN NIKMATI KEUNTUNGAN EKSKLUSIF',
         noAppBlocks: 'Belum ada konten block.',
         memberPhoto: 'MEMBER PHOTO',
+        reservationMaintenanceBadge: 'Sedang Dalam Pemeliharaan',
+        reservationMaintenanceTitle: 'Layanan Reservasi Online',
+        reservationMaintenanceLead:
+            'Kami sedang meningkatkan pengalaman reservasi digital Justus Group untuk melayani Anda dengan lebih baik.',
+        reservationMaintenanceBody:
+            'Selama proses ini, pemesanan meja melalui website untuk sementara tidak tersedia. Tim kami tetap siap membantu reservasi Anda melalui saluran resmi kami.',
+        reservationMaintenanceApology:
+            'Terima kasih atas pengertian dan kesabaran Anda. Kami menantikan kedatangan Anda.',
+        reservationMaintenanceContact: 'Hubungi Kami',
+        reservationMaintenanceWhatsAppPrefill:
+            'Halo, saya ingin melakukan reservasi. Mohon bantuannya.',
         ...reservationId,
     },
     en: {
@@ -93,6 +104,17 @@ const messages = {
         downloadAppCta: 'DOWNLOAD THE APP AND ENJOY EXCLUSIVE PRIVILEGES',
         noAppBlocks: 'No block content available.',
         memberPhoto: 'MEMBER PHOTO',
+        reservationMaintenanceBadge: 'Under Maintenance',
+        reservationMaintenanceTitle: 'Online Reservation Service',
+        reservationMaintenanceLead:
+            'We are currently enhancing the Justus Group digital reservation experience to serve you better.',
+        reservationMaintenanceBody:
+            'During this period, table reservations via our website are temporarily unavailable. Our team remains ready to assist you through our official channels.',
+        reservationMaintenanceApology:
+            'Thank you for your understanding and patience. We look forward to welcoming you.',
+        reservationMaintenanceContact: 'Contact Us',
+        reservationMaintenanceWhatsAppPrefill:
+            'Hello, I would like to make a reservation. Could you please assist me?',
         ...reservationEn,
     },
 };

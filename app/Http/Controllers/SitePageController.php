@@ -309,6 +309,10 @@ class SitePageController extends Controller
 
     public function reservation(): Response
     {
+        if ($this->isReservationMaintenanceEnabled()) {
+            return $this->reservationMaintenanceResponse();
+        }
+
         $nav = $this->baseNavData();
         $banners = $this->erp->get('web-profile/banners');
         $bannerList = collect(is_array($banners) ? $banners : [])
@@ -335,6 +339,10 @@ class SitePageController extends Controller
 
     public function reservationArrange(): Response
     {
+        if ($this->isReservationMaintenanceEnabled()) {
+            return $this->reservationMaintenanceResponse();
+        }
+
         $nav = $this->baseNavData();
         $payload = $this->erp->get('mobile/member/brands');
         $list = is_array($payload['data'] ?? null) ? $payload['data'] : [];
@@ -370,6 +378,10 @@ class SitePageController extends Controller
 
     public function reservationStatus(): Response
     {
+        if ($this->isReservationMaintenanceEnabled()) {
+            return $this->reservationMaintenanceResponse();
+        }
+
         return Inertia::render('Site/ReservationStatus', $this->baseNavData());
     }
 
@@ -443,6 +455,19 @@ class SitePageController extends Controller
                 'hero_image_url' => $about['hero_image_url'] ?? $fallback['hero_image_url'],
                 'sections' => $sections !== [] ? $sections : $fallback['sections'],
             ],
+        ]);
+    }
+
+    private function isReservationMaintenanceEnabled(): bool
+    {
+        return (bool) config('services.ymsofterp.reservation_maintenance_enabled', false);
+    }
+
+    private function reservationMaintenanceResponse(): Response
+    {
+        return Inertia::render('Site/ReservationMaintenance', [
+            ...$this->baseNavData(),
+            'heroImageUrl' => null,
         ]);
     }
 

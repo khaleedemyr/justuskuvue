@@ -5,27 +5,29 @@ use App\Http\Controllers\SitePageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('proxy/ymsoft-api')->group(function () {
-    Route::get('/reservations/availability-layout', [ErpSiteProxyController::class, 'availabilityLayout'])
-        ->middleware('throttle:erp-proxy-general')
-        ->name('erp.proxy.reservations.availability-layout');
-    Route::get('/reservations/status-by-number', [ErpSiteProxyController::class, 'statusByNumber'])
-        ->middleware('throttle:erp-proxy-general')
-        ->name('erp.proxy.reservations.status-by-number');
-    Route::post('/reservations', [ErpSiteProxyController::class, 'storeReservation'])
-        ->middleware('throttle:erp-proxy-write')
-        ->name('erp.proxy.reservations.store');
-    Route::get('/self-order/menu', [ErpSiteProxyController::class, 'selfOrderMenu'])
-        ->middleware('throttle:erp-proxy-general')
-        ->name('erp.proxy.self-order.menu');
-    Route::post('/self-order/checkout', [ErpSiteProxyController::class, 'checkoutSelfOrder'])
-        ->middleware('throttle:erp-proxy-write')
-        ->name('erp.proxy.self-order.checkout');
-    Route::post('/self-order/staging', [ErpSiteProxyController::class, 'storeSelfOrderStaging'])
-        ->middleware('throttle:erp-proxy-write')
-        ->name('erp.proxy.self-order.staging');
-    Route::get('/web-profile/qris-image', [ErpSiteProxyController::class, 'paymentQrisImage'])
-        ->middleware('throttle:erp-proxy-general')
-        ->name('erp.proxy.web-profile.qris-image');
+    Route::middleware('reservation.maintenance')->group(function () {
+        Route::get('/reservations/availability-layout', [ErpSiteProxyController::class, 'availabilityLayout'])
+            ->middleware('throttle:erp-proxy-general')
+            ->name('erp.proxy.reservations.availability-layout');
+        Route::get('/reservations/status-by-number', [ErpSiteProxyController::class, 'statusByNumber'])
+            ->middleware('throttle:erp-proxy-general')
+            ->name('erp.proxy.reservations.status-by-number');
+        Route::post('/reservations', [ErpSiteProxyController::class, 'storeReservation'])
+            ->middleware('throttle:erp-proxy-write')
+            ->name('erp.proxy.reservations.store');
+        Route::get('/self-order/menu', [ErpSiteProxyController::class, 'selfOrderMenu'])
+            ->middleware('throttle:erp-proxy-general')
+            ->name('erp.proxy.self-order.menu');
+        Route::post('/self-order/checkout', [ErpSiteProxyController::class, 'checkoutSelfOrder'])
+            ->middleware('throttle:erp-proxy-write')
+            ->name('erp.proxy.self-order.checkout');
+        Route::post('/self-order/staging', [ErpSiteProxyController::class, 'storeSelfOrderStaging'])
+            ->middleware('throttle:erp-proxy-write')
+            ->name('erp.proxy.self-order.staging');
+        Route::get('/web-profile/qris-image', [ErpSiteProxyController::class, 'paymentQrisImage'])
+            ->middleware('throttle:erp-proxy-general')
+            ->name('erp.proxy.web-profile.qris-image');
+    });
 });
 
 Route::get('/', [SitePageController::class, 'home'])->name('site.home');
