@@ -38,6 +38,14 @@ class YmsoftErpClient
         return $result ?? [];
     }
 
+    /**
+     * Always fetch fresh (no cache). Use for frequently changing CMS data.
+     */
+    public function getFresh(string $path, array $query = []): array
+    {
+        return $this->fetchApiGet($path, $query) ?? [];
+    }
+
     public function getFromWeb(string $path): array
     {
         if (! $this->cacheEnabled()) {

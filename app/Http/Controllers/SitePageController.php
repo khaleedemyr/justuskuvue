@@ -56,7 +56,7 @@ class SitePageController extends Controller
         })->filter(fn ($row) => is_array($row))->values()->all();
 
         $landingSlugs = [];
-        $landingsIndex = $this->erp->get('web-profile/outlet-landings');
+        $landingsIndex = $this->erp->getFresh('web-profile/outlet-landings');
         if (is_array($landingsIndex)) {
             foreach ($landingsIndex as $row) {
                 if (! is_array($row)) {
@@ -65,7 +65,7 @@ class SitePageController extends Controller
                 $outletId = (int) ($row['outlet_id'] ?? 0);
                 $slug = (string) ($row['slug'] ?? '');
                 if ($outletId > 0 && $slug !== '') {
-                    $landingSlugs[$outletId] = $slug;
+                    $landingSlugs[(string) $outletId] = $slug;
                 }
             }
         }
@@ -82,13 +82,11 @@ class SitePageController extends Controller
     public function outletLanding(Request $request, string $slug): Response
     {
         $query = [];
-        $previewKey = (string) config('services.ymsofterp.outlet_landing_preview_key', '');
-        $requestPreview = (string) $request->query('preview', '');
-        if ($previewKey !== '' && hash_equals($previewKey, $requestPreview)) {
-            $query['preview'] = $requestPreview;
+        if ($request->filled('preview')) {
+            $query['preview'] = (string) $request->query('preview');
         }
 
-        $payload = $this->erp->get('web-profile/outlet-landings/'.$slug, $query);
+        $payload = $this->erp->getFresh('web-profile/outlet-landings/'.$slug, $query);
         if (! is_array($payload) || empty($payload['slug'])) {
             abort(404);
         }

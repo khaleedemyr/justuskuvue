@@ -11,8 +11,7 @@ const props = defineProps({
 
 const pageTitle = computed(() => {
     const name = String(props.landing?.outlet_name || '').trim();
-    const sub = String(props.landing?.outlet_subtitle || '').trim();
-    return sub ? `${name} — ${sub}` : name || 'Outlet';
+    return name || 'Outlet';
 });
 
 const introParagraphs = computed(() =>
@@ -30,19 +29,6 @@ const bookNowHref = computed(() => {
     const id = props.landing?.book_now_outlet_id;
     if (!id) return '/reservation/arrange';
     return `/reservation/arrange?outlet_id=${encodeURIComponent(String(id))}`;
-});
-
-const displayName = computed(() => {
-    const full = String(props.landing?.outlet_name || '').trim();
-    if (!full) return { title: '', subtitle: props.landing?.outlet_subtitle || '' };
-    const sub = String(props.landing?.outlet_subtitle || '').trim();
-    if (sub && full.toLowerCase().includes(sub.toLowerCase())) {
-        return {
-            title: full.replace(new RegExp(sub, 'i'), '').trim() || full,
-            subtitle: sub,
-        };
-    }
-    return { title: full, subtitle: sub };
 });
 </script>
 
@@ -64,11 +50,8 @@ const displayName = computed(() => {
                         class="h-24 w-24 rounded-full border-2 border-amber-400/80 object-cover md:h-28 md:w-28"
                     />
                 </div>
-                <p v-if="displayName.title" class="text-sm font-semibold uppercase tracking-[0.2em] text-white/90 md:text-base">
-                    {{ displayName.title }}
-                </p>
-                <p v-if="displayName.subtitle" class="mt-1 text-xs font-light uppercase tracking-[0.35em] text-white/70 md:text-sm">
-                    {{ displayName.subtitle }}
+                <p v-if="landing.outlet_name" class="text-sm font-semibold uppercase tracking-[0.2em] text-white/90 md:text-base">
+                    {{ landing.outlet_name }}
                 </p>
 
                 <h1

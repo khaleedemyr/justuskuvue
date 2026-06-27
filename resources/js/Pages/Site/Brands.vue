@@ -87,7 +87,8 @@ function buildMapUrl(outlet) {
 
 function landingHref(outlet) {
     const id = Number(outlet?.id || 0);
-    const slug = props.landingSlugs?.[id];
+    if (!id) return null;
+    const slug = props.landingSlugs?.[String(id)] ?? props.landingSlugs?.[id];
     return slug ? `/outlets/${slug}` : null;
 }
 
