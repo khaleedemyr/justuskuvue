@@ -30,10 +30,49 @@ const bookNowHref = computed(() => {
     if (!id) return '/reservation/arrange';
     return `/reservation/arrange?outlet_id=${encodeURIComponent(String(id))}`;
 });
+
+/** Embed Google Maps — pakai API jika ada, fallback dari map_url / alamat outlet. */
+const mapEmbedUrl = computed(() => {
+    const fromApi = String(props.landing?.map_embed_url || '').trim();
+    if (fromApi) return fromApi;
+
+    const mapUrl = String(props.landing?.map_url || '').trim();
+    if (mapUrl) {
+        try {
+            const u = new URL(mapUrl);
+            const q = u.searchParams.get('q');
+            if (q) {
+                return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&output=embed`;
+            }
+        } catch {
+            // ignore invalid URL
+        }
+    }
+
+    const lat = String(props.landing?.lat ?? '').trim();
+    const lng = String(props.landing?.long ?? props.landing?.lng ?? '').trim();
+    if (lat && lng) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}&z=15&output=embed`;
+    }
+
+    const address = String(props.landing?.address || '').trim();
+    if (address) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&z=15&output=embed`;
+    }
+
+    return null;
+});
 </script>
 
 <template>
-    <SiteLayout :title="pageTitle" :menus="menus" :brand-logos="brandLogos" :show-header="false">
+    <SiteLayout
+        :title="pageTitle"
+        :menus="menus"
+        :brand-logos="brandLogos"
+        :show-header="false"
+        :show-footer="false"
+        shell-class="min-h-screen bg-black text-white"
+    >
         <main class="font-montserrat bg-black text-white">
             <div
                 v-if="landing.is_preview"
@@ -114,32 +153,23 @@ const bookNowHref = computed(() => {
             </section>
 
             <!-- Address + Map -->
-            <section v-if="landing.address || landing.map_embed_url" class="border-t border-white/10 px-6 py-12 text-center md:py-16">
-                <p v-if="landing.address" class="mx-auto max-w-2xl whitespace-pre-line text-sm font-light leading-relaxed text-white/80 md:text-base">
+            <section v-if="landing.address || mapEmbedUrl" class="border-t border-white/10 px-4 py-12 md:px-6 md:py-16">
+                <p v-if="landing.address" class="mx-auto max-w-2xl text-center whitespace-pre-line text-sm font-light leading-relaxed text-white/80 md:text-base">
                     {{ landing.address }}
                 </p>
                 <div
-                    v-if="landing.map_embed_url"
-                    class="mx-auto mt-8 max-w-3xl overflow-hidden rounded-lg border border-white/10 bg-zinc-900"
+                    v-if="mapEmbedUrl"
+                    class="mx-auto mt-8 w-full max-w-4xl overflow-hidden rounded-lg border border-white/10 bg-zinc-900"
                 >
                     <iframe
-                        :src="landing.map_embed_url"
-                        class="h-64 w-full border-0 md:h-80"
+                        :src="mapEmbedUrl"
+                        class="h-72 w-full border-0 md:h-96"
                         loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade"
                         allowfullscreen
                         :title="`Peta ${landing.outlet_name || 'outlet'}`"
                     />
                 </div>
-                <a
-                    v-if="landing.map_url"
-                    :href="landing.map_url"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="mt-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-white/60 transition hover:text-amber-300"
-                >
-                    {{ landing.see_map_label || 'SEE MAP' }}
-                </a>
             </section>
 
             <!-- Back -->
