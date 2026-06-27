@@ -35,7 +35,14 @@ let promoMqCleanup = null;
 const { t } = useSiteI18n();
 const isMobile = useIsMobile();
 
-const showHeroVideo = computed(() => isVideoBanner() && !isMobile.value);
+const showHeroVideo = computed(() => isVideoBanner());
+const heroVideoPoster = computed(() => {
+    if (!isVideoBanner()) {
+        return '';
+    }
+
+    return props.banner?.poster_mobile || props.banner?.contentImage || '';
+});
 const heroImageSrc = computed(() => {
     if (!props.banner?.image || isVideoBanner()) {
         return null;
@@ -298,6 +305,7 @@ onBeforeUnmount(() => {
                     <LazyAutoplayVideo
                         eager
                         :src="banner.image"
+                        :poster="heroVideoPoster"
                         class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     />
                 </template>

@@ -2,7 +2,9 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 /** Match Tailwind `md` breakpoint — mobile-first perf toggles. */
 export function useIsMobile(breakpointPx = 768) {
-    const isMobile = ref(false);
+    const isMobile = ref(
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches,
+);
     let mq = null;
     let handler = null;
 

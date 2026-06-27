@@ -5,7 +5,8 @@ import { useIsMobile } from '@/composables/useIsMobile';
 const props = defineProps({
     src: { type: String, required: true },
     class: { type: String, default: '' },
-    /** Desktop: autoplay immediately. Mobile: load/play only when visible. */
+    poster: { type: String, default: '' },
+    /** Hero: load + autoplay immediately (including mobile). */
     eager: { type: Boolean, default: false },
 });
 
@@ -23,7 +24,14 @@ function tryPlay() {
 }
 
 onMounted(() => {
-    if (!props.eager && isMobile.value) {
+    if (props.eager) {
+        shouldLoad.value = true;
+        requestAnimationFrame(tryPlay);
+
+        return;
+    }
+
+    if (isMobile.value) {
         observer = new IntersectionObserver(
             (entries) => {
                 if (!entries.some((e) => e.isIntersecting)) {
@@ -57,10 +65,11 @@ onBeforeUnmount(() => {
         ref="videoRef"
         :class="props.class"
         :src="shouldLoad ? src : undefined"
+        :poster="poster || undefined"
         muted
         loop
         playsinline
-        :autoplay="shouldLoad && (!isMobile || !eager)"
-        preload="none"
+        :autoplay="shouldLoad"
+        :preload="eager ? 'auto' : 'none'"
     />
 </template>

@@ -662,6 +662,11 @@ class SitePageController extends Controller
             || preg_match('/\.(mp4|webm)(\?.*)?$/i', $image);
 
         if ($isVideo) {
+            $poster = trim((string) ($banner['contentImage'] ?? ''));
+            if ($poster !== '') {
+                $banner['poster_mobile'] = SiteMediaUrl::resize($poster, 640);
+            }
+
             return $banner;
         }
 
@@ -673,11 +678,27 @@ class SitePageController extends Controller
 
     private function shareHomeLcpShell(?array $banner): void
     {
-        if (! is_array($banner) || empty($banner['image_mobile'])) {
+        if (! is_array($banner)) {
             return;
         }
 
-        $url = (string) $banner['image_mobile'];
+        $url = null;
+        if (! empty($banner['image_mobile'])) {
+            $url = (string) $banner['image_mobile'];
+        } elseif (! empty($banner['poster_mobile'])) {
+            $url = (string) $banner['poster_mobile'];
+        }
+
+        if ($url === null || $url === '') {
+            view()->share([
+                'isSiteHome' => true,
+                'lcpTitle' => (string) ($banner['title'] ?? ''),
+                'lcpSubtitle' => (string) ($banner['subtitle'] ?? ''),
+            ]);
+
+            return;
+        }
+
         view()->share([
             'isSiteHome' => true,
             'lcpPreloadUrl' => $url,
