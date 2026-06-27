@@ -8,10 +8,34 @@
         <title inertia>{{ config('app.name', 'Justus Group') }}</title>
         <link rel="icon" type="image/png" href="{{ asset('logobulathitam.png') }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600&display=swap" rel="stylesheet" />
+        @php
+            $isAuthArea = request()->is(
+                'login', 'register', 'dashboard', 'profile', 'verify-email',
+                'confirm-password', 'forgot-password', 'reset-password', 'password/*'
+            );
+        @endphp
+
+        <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+        <link
+            rel="preload"
+            as="style"
+            href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600&display=swap"
+            onload="this.onload=null;this.rel='stylesheet'"
+        >
+        <noscript>
+            <link href="https://fonts.bunny.net/css?family=montserrat:300,400,500,600&display=swap" rel="stylesheet">
+        </noscript>
+        @if ($isAuthArea)
+            <link
+                rel="preload"
+                as="style"
+                href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
+                onload="this.onload=null;this.rel='stylesheet'"
+            >
+            <noscript>
+                <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet">
+            </noscript>
+        @endif
 
         <!-- Scripts -->
         @routes

@@ -1,9 +1,11 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteNavbar from '@/Components/SiteNavbar.vue';
-import { Link } from '@inertiajs/vue3';
+import LazyAutoplayVideo from '@/Components/LazyAutoplayVideo.vue';
+import { Link, Head } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
+import { useIsMobile } from '@/composables/useIsMobile';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
@@ -31,6 +33,15 @@ const promoViewportWidth = ref(0);
 const isDesktopPromoGrid = ref(false);
 let promoMqCleanup = null;
 const { t } = useSiteI18n();
+const isMobile = useIsMobile();
+
+const showHeroVideo = computed(() => isVideoBanner() && !isMobile.value);
+const heroImagePreload = computed(() => {
+    if (!props.banner?.image || isVideoBanner()) {
+        return null;
+    }
+    return props.banner.image;
+});
 
 const promoSlidesList = computed(() =>
     (Array.isArray(props.promoSlides) ? props.promoSlides : []).filter((s) => s && String(s.image || '').trim() !== ''),
@@ -267,6 +278,9 @@ onBeforeUnmount(() => {
 
 <template>
     <SiteLayout title="Home" :show-header="false">
+        <Head v-if="heroImagePreload">
+            <link rel="preload" as="image" :href="heroImagePreload" fetchpriority="high" />
+        </Head>
         <main class="font-montserrat w-full overflow-x-hidden bg-black text-white">
             <div class="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden md:block md:h-auto md:max-h-none">
             <div
@@ -274,26 +288,22 @@ onBeforeUnmount(() => {
                 ref="heroRef"
                 class="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-black md:overflow-visible md:h-[100dvh] md:min-h-[100dvh] md:max-h-[100dvh] md:flex-none"
             >
-                <template v-if="banner?.image && isVideoBanner()">
-                    <video
-                        class="absolute inset-0 h-full w-full bg-black object-cover object-center"
+                <template v-if="showHeroVideo">
+                    <LazyAutoplayVideo
+                        eager
                         :src="banner.image"
-                        autoplay
-                        muted
-                        loop
-                        playsinline
+                        class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     />
                 </template>
                 <template v-else-if="banner?.image">
                     <img
                         :src="banner.image"
                         :alt="banner?.title || 'Head Banner'"
-                        class="absolute inset-0 h-full w-full bg-black object-cover object-center opacity-45 blur-sm scale-110"
-                    />
-                    <img
-                        :src="banner.image"
-                        :alt="banner?.title || 'Head Banner'"
                         class="absolute inset-0 h-full w-full bg-black object-cover object-center"
+                        fetchpriority="high"
+                        decoding="async"
+                        width="1280"
+                        height="720"
                     />
                 </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />
@@ -320,6 +330,8 @@ onBeforeUnmount(() => {
                     <img
                         src="/logohitam.png"
                         alt="Justus Group"
+                        width="148"
+                        height="48"
                         class="h-auto w-[148px] max-w-[calc(100%-7rem)] object-contain"
                     />
                 </Link>
@@ -330,6 +342,8 @@ onBeforeUnmount(() => {
                             src="/logohitam.png"
                             alt=""
                             aria-hidden="true"
+                            width="320"
+                            height="104"
                             class="mb-6 hidden h-auto w-[320px] object-contain md:block"
                         />
                         <h1 class="hero-title font-normal uppercase text-white">
@@ -513,14 +527,9 @@ onBeforeUnmount(() => {
                                 <template v-if="block.block_type === 'video'">
                                     <template v-if="block.video_url">
                                         <div class="absolute inset-0">
-                                            <video
-                                                class="h-full w-full bg-black object-cover object-center"
+                                            <LazyAutoplayVideo
                                                 :src="block.video_url"
-                                                autoplay
-                                                muted
-                                                loop
-                                                playsinline
-                                                preload="auto"
+                                                class="h-full w-full bg-black object-cover object-center"
                                             />
                                         </div>
                                         <div class="pointer-events-none absolute inset-0 bg-black/10" />
@@ -553,14 +562,9 @@ onBeforeUnmount(() => {
                                 <template v-if="block.block_type === 'video'">
                                     <template v-if="block.video_url">
                                         <div class="absolute inset-0">
-                                            <video
-                                                class="h-full w-full bg-black object-cover object-center"
+                                            <LazyAutoplayVideo
                                                 :src="block.video_url"
-                                                autoplay
-                                                muted
-                                                loop
-                                                playsinline
-                                                preload="auto"
+                                                class="h-full w-full bg-black object-cover object-center"
                                             />
                                         </div>
                                         <div class="pointer-events-none absolute inset-0 bg-black/10" />
@@ -620,7 +624,7 @@ onBeforeUnmount(() => {
                             data-reveal
                         >
                             <div class="relative aspect-[16/10] w-full overflow-hidden bg-zinc-800">
-                                <img v-if="item.image" :src="item.image" :alt="item.title" class="h-full w-full object-cover transition group-hover:scale-105" />
+                                <img v-if="item.image" :src="item.image" :alt="item.title" class="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" decoding="async" />
                                 <div v-else class="flex h-full items-center justify-center text-sm text-white/40">{{ t('noImage') }}</div>
                             </div>
                             <div class="flex min-h-0 flex-1 flex-col px-3 py-4 text-center">

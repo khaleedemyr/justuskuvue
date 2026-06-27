@@ -26,4 +26,18 @@ export default defineConfig({
             },
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules/vue') || id.includes('node_modules/@vue')) {
+                        return 'vendor-vue';
+                    }
+                    if (id.includes('node_modules/@inertiajs')) {
+                        return 'vendor-inertia';
+                    }
+                },
+            },
+        },
+    },
 });

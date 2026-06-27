@@ -38,7 +38,7 @@ const { t } = useSiteI18n();
             <div class="w-full px-6 py-12 sm:px-8 md:py-14">
                 <div class="flex w-full flex-col gap-10 md:flex-row md:items-start md:justify-between md:gap-12">
                     <div class="flex shrink-0 flex-col items-start">
-                        <img src="/logohitam.png" alt="Justus Group" class="h-auto w-[200px] sm:w-[240px]" />
+                        <img src="/logohitam.png" alt="Justus Group" width="240" height="78" class="h-auto w-[200px] sm:w-[240px]" loading="lazy" decoding="async" />
                         <p class="footer-brand mt-6 text-xs font-light uppercase tracking-[0.2em] text-white/90 sm:text-sm">{{ t('craftedGuestJourney') }}</p>
                     </div>
                     <div class="flex max-w-xl flex-col items-start md:items-end md:text-right">
