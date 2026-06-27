@@ -27,10 +27,13 @@ class SitePageController extends Controller
         $blocks = $this->erp->get('web-profile/home-blocks');
         $whatsOn = $this->extractWhatsOnItems($this->erp->get('mobile/member/whats-on'));
 
+        $banner = $this->enrichBannerMedia($banners[0] ?? null);
+        $this->shareHomeLcpShell($banner);
+
         return Inertia::render('Site/Home', [
             'menus' => $this->normalizeMenuLabels($menus),
             'brandLogos' => $this->normalizeBrandLogos($brands),
-            'banner' => $this->enrichBannerMedia($banners[0] ?? null),
+            'banner' => $banner,
             'promoSlides' => array_values(array_filter(is_array($promoSlides) ? $promoSlides : [], fn ($r) => is_array($r))),
             'blocks' => array_values(array_filter($blocks, fn ($r) => is_array($r))),
             'news' => $whatsOn,
@@ -662,10 +665,27 @@ class SitePageController extends Controller
             return $banner;
         }
 
-        $banner['image_mobile'] = SiteMediaUrl::resize($image, 768);
+        $banner['image_mobile'] = SiteMediaUrl::resize($image, 640);
         $banner['image_desktop'] = SiteMediaUrl::resize($image, 1600);
 
         return $banner;
+    }
+
+    private function shareHomeLcpShell(?array $banner): void
+    {
+        if (! is_array($banner) || empty($banner['image_mobile'])) {
+            return;
+        }
+
+        $url = (string) $banner['image_mobile'];
+        view()->share([
+            'isSiteHome' => true,
+            'lcpPreloadUrl' => $url,
+            'lcpHeroUrl' => $url,
+            'lcpTitle' => (string) ($banner['title'] ?? ''),
+            'lcpSubtitle' => (string) ($banner['subtitle'] ?? ''),
+        ]);
+        request()->attributes->set('lcp_preload_url', $url);
     }
 }
 

@@ -40,6 +40,15 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload', false);
         }
 
+        $lcpUrl = $request->attributes->get('lcp_preload_url');
+        if (is_string($lcpUrl) && $lcpUrl !== '') {
+            $response->headers->set(
+                'Link',
+                '<'.$lcpUrl.'>; rel=preload; as=image; type=image/webp; fetchpriority=high',
+                false,
+            );
+        }
+
         return $response;
     }
 }

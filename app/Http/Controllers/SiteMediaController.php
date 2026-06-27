@@ -80,7 +80,7 @@ class SiteMediaController extends Controller
 
         if ($srcW <= $targetWidth) {
             ob_start();
-            imagewebp($source, null, 82);
+            imagewebp($source, null, $this->webpQuality($targetWidth));
             $webp = ob_get_clean() ?: null;
             imagedestroy($source);
 
@@ -99,10 +99,15 @@ class SiteMediaController extends Controller
         imagedestroy($source);
 
         ob_start();
-        imagewebp($dest, null, 82);
+        imagewebp($dest, null, $this->webpQuality($targetWidth));
         $webp = ob_get_clean() ?: null;
         imagedestroy($dest);
 
         return $webp;
+    }
+
+    private function webpQuality(int $targetWidth): int
+    {
+        return $targetWidth <= 768 ? 68 : 80;
     }
 }
