@@ -11,10 +11,13 @@ const props = defineProps({
     menus: { type: Array, default: () => [] },
     brandLogos: { type: Array, default: () => [] },
     outlets: { type: Array, default: () => [] },
+    initialOutletId: { type: [String, Number], default: '' },
 });
 
 const { t, lang } = useSiteI18n();
-const form = useReservationArrange(toRef(props, 'outlets'), t, lang);
+const form = useReservationArrange(toRef(props, 'outlets'), t, lang, {
+    initialOutletId: props.initialOutletId,
+});
 const page = usePage();
 const paymentQrisLoadFailed = ref(false);
 const successQrisLoadFailed = ref(false);

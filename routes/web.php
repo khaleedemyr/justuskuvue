@@ -32,6 +32,7 @@ Route::prefix('proxy/ymsoft-api')->group(function () {
 
 Route::get('/', [SitePageController::class, 'home'])->name('site.home');
 Route::get('/brands', [SitePageController::class, 'brands'])->name('site.brands');
+Route::get('/outlets/{slug}', [SitePageController::class, 'outletLanding'])->name('site.outlets.landing');
 Route::get('/careers', [SitePageController::class, 'careers'])->name('site.careers');
 Route::get('/careers/head-office', [SitePageController::class, 'careersScope'])
     ->defaults('scope', 'head-office')

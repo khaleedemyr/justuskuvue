@@ -23,7 +23,7 @@ import {
 import { computed, nextTick, proxyRefs, ref, watch } from 'vue';
 
 /** @param {import('vue').Ref<Array<{ id: number; name: string; address?: string | null; image?: string | null }>> | Array<...>} outletsSource */
-export function useReservationArrange(outletsSource, t, langRef) {
+export function useReservationArrange(outletsSource, t, langRef, options = {}) {
     const page = usePage();
     const baseUrl = computed(() => String(page.props.ymsoftErpApiBaseUrl || '').replace(/\/$/, ''));
     const erpWebBaseUrl = computed(() => String(page.props.ymsoftErpWebBaseUrl || '').replace(/\/$/, ''));
@@ -33,6 +33,8 @@ export function useReservationArrange(outletsSource, t, langRef) {
         return Array.isArray(o) ? o : [];
     });
 
+    const initialOutletId = String(options.initialOutletId || '').trim();
+
     const callCenterWa = computed(() =>
         normalizeWhatsAppNumber(String(page.props.reservationCallCenterWa || '')),
     );
@@ -40,7 +42,7 @@ export function useReservationArrange(outletsSource, t, langRef) {
     const todayStr = formatLocalDate(new Date());
     const submitted = ref(false);
     const successInfo = ref(null);
-    const outletId = ref('');
+    const outletId = ref(initialOutletId);
     const date = ref('');
     const time = ref('');
     const pax = ref(1);

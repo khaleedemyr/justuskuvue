@@ -55,11 +55,47 @@ class SitePageController extends Controller
             return $detailData ?: $item;
         })->filter(fn ($row) => is_array($row))->values()->all();
 
+        $landingSlugs = [];
+        $landingsIndex = $this->erp->get('web-profile/outlet-landings');
+        if (is_array($landingsIndex)) {
+            foreach ($landingsIndex as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                $outletId = (int) ($row['outlet_id'] ?? 0);
+                $slug = (string) ($row['slug'] ?? '');
+                if ($outletId > 0 && $slug !== '') {
+                    $landingSlugs[$outletId] = $slug;
+                }
+            }
+        }
+
         return Inertia::render('Site/Brands', [
             ...$nav,
             'heroImageUrl' => is_array($banners[0] ?? null) ? ($banners[0]['image'] ?? null) : null,
             'initialBrand' => (string) ($request->query('brand', '')),
             'brands' => $brands,
+            'landingSlugs' => $landingSlugs,
+        ]);
+    }
+
+    public function outletLanding(Request $request, string $slug): Response
+    {
+        $query = [];
+        $previewKey = (string) config('services.ymsofterp.outlet_landing_preview_key', '');
+        $requestPreview = (string) $request->query('preview', '');
+        if ($previewKey !== '' && hash_equals($previewKey, $requestPreview)) {
+            $query['preview'] = $requestPreview;
+        }
+
+        $payload = $this->erp->get('web-profile/outlet-landings/'.$slug, $query);
+        if (! is_array($payload) || empty($payload['slug'])) {
+            abort(404);
+        }
+
+        return Inertia::render('Site/OutletLanding', [
+            ...$this->baseNavData(),
+            'landing' => $payload,
         ]);
     }
 
@@ -337,7 +373,7 @@ class SitePageController extends Controller
         ]);
     }
 
-    public function reservationArrange(): Response
+    public function reservationArrange(Request $request): Response
     {
         if ($this->isReservationMaintenanceEnabled()) {
             return $this->reservationMaintenanceResponse();
@@ -373,6 +409,7 @@ class SitePageController extends Controller
         return Inertia::render('Site/ReservationArrange', [
             ...$nav,
             'outlets' => $outlets,
+            'initialOutletId' => (string) ($request->query('outlet_id', '')),
         ]);
     }
 

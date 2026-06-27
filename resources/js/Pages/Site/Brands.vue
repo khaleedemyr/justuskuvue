@@ -12,6 +12,7 @@ const props = defineProps({
     heroImageUrl: { type: String, default: null },
     initialBrand: { type: String, default: '' },
     brands: { type: Array, default: () => [] },
+    landingSlugs: { type: Object, default: () => ({}) },
 });
 const { t } = useSiteI18n();
 
@@ -82,6 +83,12 @@ function buildMapUrl(outlet) {
         return `https://www.google.com/maps?q=${encodeURIComponent(`${outlet.lat},${outlet.long}`)}`;
     }
     return null;
+}
+
+function landingHref(outlet) {
+    const id = Number(outlet?.id || 0);
+    const slug = props.landingSlugs?.[id];
+    return slug ? `/outlets/${slug}` : null;
 }
 
 /** Pastikan label tidak bergantung pada teks lama dari API (mis. masih "Speed Wi-fi"). */
@@ -281,6 +288,7 @@ onBeforeUnmount(() => {
                             {{ t('gallery') }}
                         </button>
                         <a v-if="outlet.pdf_menu" :href="outlet.pdf_menu" target="_blank" rel="noreferrer" class="hover:underline">{{ t('menu') }}</a>
+                        <Link v-if="landingHref(outlet)" :href="landingHref(outlet)" class="hover:underline">{{ t('landingPage') }}</Link>
                         <a v-if="buildMapUrl(outlet)" :href="buildMapUrl(outlet)" target="_blank" rel="noreferrer" class="hover:underline">{{ t('googleMap') }}</a>
                     </div>
                 </div>

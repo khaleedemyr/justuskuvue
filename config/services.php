@@ -59,6 +59,7 @@ return [
             static fn ($h) => strtolower(trim((string) $h)),
             explode(',', (string) env('ALLOWED_EXTERNAL_HOSTS', 'justus.co.id,www.justus.co.id,staging.justus.co.id,play.google.com,apps.apple.com'))
         ))),
+        'outlet_landing_preview_key' => (string) env('JUSTUS_KUNEST_PREVIEW_KEY', ''),
     ],
 
     'recaptcha' => [

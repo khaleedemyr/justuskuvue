@@ -15,7 +15,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Hostinger layout: Laravel root == public_html, Vite build lives at /build (not /public/build).
+        if (is_file(base_path('build/manifest.json'))) {
+            $this->app->usePublicPath(base_path());
+        }
     }
 
     /**
