@@ -15,6 +15,18 @@
             );
         @endphp
 
+        @if (!empty($lcpPreconnectHost))
+            <link rel="preconnect" href="{{ $lcpPreconnectHost }}" crossorigin>
+        @endif
+        @if (!empty($lcpPreloadUrl))
+            <link rel="preload" as="image" href="{{ $lcpPreloadUrl }}" fetchpriority="high" type="image/webp">
+            <style>
+                #lcp-shell{position:fixed;inset:0;z-index:0;background:#000;pointer-events:none}
+                #lcp-shell img{width:100%;height:100%;object-fit:cover;object-position:center}
+                #lcp-shell::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.5)}
+            </style>
+        @endif
+
         <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
         <link
             rel="preload"
@@ -43,6 +55,18 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        @if (!empty($lcpHeroUrl))
+            <div id="lcp-shell" aria-hidden="true">
+                <img
+                    src="{{ $lcpHeroUrl }}"
+                    alt=""
+                    width="768"
+                    height="1024"
+                    fetchpriority="high"
+                    decoding="async"
+                >
+            </div>
+        @endif
         @inertia
     </body>
 </html>

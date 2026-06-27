@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\YmsoftErpClient;
+use App\Support\SiteMediaUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +30,7 @@ class SitePageController extends Controller
         return Inertia::render('Site/Home', [
             'menus' => $this->normalizeMenuLabels($menus),
             'brandLogos' => $this->normalizeBrandLogos($brands),
-            'banner' => $banners[0] ?? null,
+            'banner' => $this->enrichBannerMedia($banners[0] ?? null),
             'promoSlides' => array_values(array_filter(is_array($promoSlides) ? $promoSlides : [], fn ($r) => is_array($r))),
             'blocks' => array_values(array_filter($blocks, fn ($r) => is_array($r))),
             'news' => $whatsOn,
@@ -640,6 +641,31 @@ class SitePageController extends Controller
         }
 
         return $raw;
+    }
+
+    private function enrichBannerMedia(?array $banner): ?array
+    {
+        if (! is_array($banner)) {
+            return null;
+        }
+
+        $image = trim((string) ($banner['image'] ?? ''));
+        if ($image === '') {
+            return $banner;
+        }
+
+        $isVideo = ($banner['headIsVideo'] ?? false) === true
+            || ($banner['headMediaType'] ?? '') === 'video'
+            || preg_match('/\.(mp4|webm)(\?.*)?$/i', $image);
+
+        if ($isVideo) {
+            return $banner;
+        }
+
+        $banner['image_mobile'] = SiteMediaUrl::resize($image, 768);
+        $banner['image_desktop'] = SiteMediaUrl::resize($image, 1600);
+
+        return $banner;
     }
 }
 

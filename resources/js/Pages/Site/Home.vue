@@ -2,7 +2,7 @@
 import SiteLayout from '@/Layouts/SiteLayout.vue';
 import SiteNavbar from '@/Components/SiteNavbar.vue';
 import LazyAutoplayVideo from '@/Components/LazyAutoplayVideo.vue';
-import { Link, Head } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
 import { useIsMobile } from '@/composables/useIsMobile';
@@ -36,10 +36,17 @@ const { t } = useSiteI18n();
 const isMobile = useIsMobile();
 
 const showHeroVideo = computed(() => isVideoBanner() && !isMobile.value);
-const heroImagePreload = computed(() => {
+const heroImageSrc = computed(() => {
     if (!props.banner?.image || isVideoBanner()) {
         return null;
     }
+    if (isMobile.value && props.banner.image_mobile) {
+        return props.banner.image_mobile;
+    }
+    if (props.banner.image_desktop) {
+        return props.banner.image_desktop;
+    }
+
     return props.banner.image;
 });
 
@@ -236,6 +243,8 @@ function updatePromoViewportWidth() {
 }
 
 onMounted(() => {
+    document.getElementById('lcp-shell')?.remove();
+
     updatePinned();
     syncPromoBreakpoint();
     updatePromoViewportWidth();
@@ -278,9 +287,6 @@ onBeforeUnmount(() => {
 
 <template>
     <SiteLayout title="Home" :show-header="false">
-        <Head v-if="heroImagePreload">
-            <link rel="preload" as="image" :href="heroImagePreload" fetchpriority="high" />
-        </Head>
         <main class="font-montserrat w-full overflow-x-hidden bg-black text-white">
             <div class="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden md:block md:h-auto md:max-h-none">
             <div
@@ -295,15 +301,15 @@ onBeforeUnmount(() => {
                         class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                     />
                 </template>
-                <template v-else-if="banner?.image">
+                <template v-else-if="heroImageSrc">
                     <img
-                        :src="banner.image"
+                        :src="heroImageSrc"
                         :alt="banner?.title || 'Head Banner'"
                         class="absolute inset-0 h-full w-full bg-black object-cover object-center"
                         fetchpriority="high"
                         decoding="async"
-                        width="1280"
-                        height="720"
+                        width="768"
+                        height="1024"
                     />
                 </template>
                 <div v-else class="absolute inset-0 bg-zinc-900" />

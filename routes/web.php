@@ -1,8 +1,14 @@
 <?php
 
 use App\Http\Controllers\ErpSiteProxyController;
+use App\Http\Controllers\SiteMediaController;
 use App\Http\Controllers\SitePageController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/m/{width}/{encoded}', [SiteMediaController::class, 'show'])
+    ->where(['width' => '[0-9]+', 'encoded' => '[A-Za-z0-9_-]+'])
+    ->middleware('throttle:120,1')
+    ->name('site.media');
 
 Route::prefix('proxy/ymsoft-api')->group(function () {
     Route::middleware('reservation.maintenance')->group(function () {
