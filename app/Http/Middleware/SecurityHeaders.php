@@ -25,7 +25,7 @@ class SecurityHeaders
             "font-src 'self' data: https://fonts.bunny.net",
             "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
             "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com",
-            "frame-src 'self' https://www.google.com https://www.gstatic.com https://www.youtube.com https://www.youtube-nocookie.com",
+            "frame-src 'self' https://www.google.com https://maps.google.com https://www.gstatic.com https://www.youtube.com https://www.youtube-nocookie.com",
             "connect-src 'self' https://www.google.com https://www.gstatic.com",
             'upgrade-insecure-requests',
         ]);

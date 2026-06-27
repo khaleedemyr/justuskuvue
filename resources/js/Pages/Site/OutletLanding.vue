@@ -114,16 +114,29 @@ const bookNowHref = computed(() => {
             </section>
 
             <!-- Address + Map -->
-            <section class="border-t border-white/10 px-6 py-12 text-center md:py-16">
+            <section v-if="landing.address || landing.map_embed_url" class="border-t border-white/10 px-6 py-12 text-center md:py-16">
                 <p v-if="landing.address" class="mx-auto max-w-2xl whitespace-pre-line text-sm font-light leading-relaxed text-white/80 md:text-base">
                     {{ landing.address }}
                 </p>
+                <div
+                    v-if="landing.map_embed_url"
+                    class="mx-auto mt-8 max-w-3xl overflow-hidden rounded-lg border border-white/10 bg-zinc-900"
+                >
+                    <iframe
+                        :src="landing.map_embed_url"
+                        class="h-64 w-full border-0 md:h-80"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        allowfullscreen
+                        :title="`Peta ${landing.outlet_name || 'outlet'}`"
+                    />
+                </div>
                 <a
                     v-if="landing.map_url"
                     :href="landing.map_url"
                     target="_blank"
                     rel="noreferrer"
-                    class="mt-8 inline-block text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:text-amber-300 md:text-base"
+                    class="mt-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-white/60 transition hover:text-amber-300"
                 >
                     {{ landing.see_map_label || 'SEE MAP' }}
                 </a>
