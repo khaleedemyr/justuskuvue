@@ -227,7 +227,7 @@
     ]
   },
   "resources/js/Pages/Site/Brands.vue": {
-    "file": "assets/Brands-Bv_8Ezwf.js",
+    "file": "assets/Brands-zhiucIFy.js",
     "name": "Brands",
     "src": "resources/js/Pages/Site/Brands.vue",
     "isDynamicEntry": true,
@@ -390,7 +390,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-CMtJaX2t.js",
+    "file": "assets/app-D-MHlNx_.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -427,7 +427,7 @@
       "resources/js/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-D5071ZUs.css"
+      "assets/app-zOYKpZj-.css"
     ]
   }
 }

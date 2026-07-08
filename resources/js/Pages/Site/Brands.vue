@@ -253,7 +253,7 @@ onBeforeUnmount(() => {
             <article
                 v-for="(outlet, idx) in activeGroup?.items || []"
                 :key="outlet.id"
-                class="mb-4 grid overflow-hidden border border-white/20 bg-[#efefef] text-black md:mb-5 md:grid-cols-2"
+                class="mb-4 grid overflow-hidden border border-white/20 bg-[#333333] text-white md:mb-5 md:grid-cols-2"
             >
                 <div :class="idx % 2 === 1 ? 'order-2' : 'order-1'">
                     <img
@@ -262,12 +262,12 @@ onBeforeUnmount(() => {
                         :alt="outlet.name"
                         class="h-[260px] w-full object-cover md:h-full"
                     />
-                    <div v-else class="flex h-[260px] items-center justify-center bg-zinc-200 text-zinc-500">{{ t('noImage') }}</div>
+                    <div v-else class="flex h-[260px] items-center justify-center bg-zinc-800 text-zinc-400">{{ t('noImage') }}</div>
                 </div>
                 <div class="flex flex-col justify-between gap-5 px-6 py-5 md:px-8 md:py-7" :class="idx % 2 === 1 ? 'order-1' : 'order-2'">
                     <div>
                         <h2 class="text-xl font-semibold uppercase tracking-[0.04em] md:text-2xl">{{ outlet.name }}</h2>
-                        <p v-if="outlet.address" class="mt-2 whitespace-pre-line text-sm font-light leading-7 tracking-[0.01em] md:text-base">
+                        <p v-if="outlet.address" class="mt-2 whitespace-pre-line text-sm font-light leading-7 tracking-[0.01em] text-white/85 md:text-base">
                             {{ outlet.address }}
                         </p>
                     </div>
@@ -275,11 +275,11 @@ onBeforeUnmount(() => {
                     <div v-if="outlet.facility && outlet.facility.length" class="grid grid-cols-2 gap-3">
                         <div v-for="f in outlet.facility.slice(0, 8)" :key="`${outlet.id}-${f.key}`" class="flex items-center gap-2">
                             <img :src="f.image" :alt="f.name" class="h-7 w-7 rounded bg-black object-contain p-1" />
-                            <span class="text-[11px] font-light uppercase leading-tight tracking-[0.04em] md:text-xs">{{ facilityDisplayLabel(f) }}</span>
+                            <span class="text-[11px] font-light uppercase leading-tight tracking-[0.04em] text-white/90 md:text-xs">{{ facilityDisplayLabel(f) }}</span>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-5 border-t border-black/20 pt-3 text-xs font-semibold uppercase tracking-[0.08em] md:text-sm">
+                    <div class="flex flex-wrap gap-5 border-t border-white/20 pt-3 text-xs font-semibold uppercase tracking-[0.08em] text-white/90 md:text-sm">
                         <button
                             v-if="outlet.gallery && outlet.gallery.length"
                             type="button"
