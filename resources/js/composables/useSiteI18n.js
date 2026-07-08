@@ -61,6 +61,8 @@ const messages = {
         reservationMaintenanceContact: 'Hubungi Kami',
         reservationMaintenanceWhatsAppPrefill:
             'Halo, saya ingin melakukan reservasi. Mohon bantuannya.',
+        outletLandingWhatsAppPrefill:
+            'Halo, saya ingin reservasi di {outlet}. Mohon bantuannya.',
         ...reservationId,
     },
     en: {
@@ -117,6 +119,8 @@ const messages = {
         reservationMaintenanceContact: 'Contact Us',
         reservationMaintenanceWhatsAppPrefill:
             'Hello, I would like to make a reservation. Could you please assist me?',
+        outletLandingWhatsAppPrefill:
+            'Hello, I would like to make a reservation at {outlet}. Could you please assist me?',
         ...reservationEn,
     },
 };

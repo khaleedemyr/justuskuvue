@@ -1,8 +1,9 @@
 <script setup>
 import SiteLayout from '@/Layouts/SiteLayout.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useSiteI18n } from '@/composables/useSiteI18n';
+import { normalizeWhatsAppNumber } from '@/lib/reservationHelpers';
 
 const props = defineProps({
     menus: { type: Array, default: () => [] },
@@ -11,6 +12,7 @@ const props = defineProps({
 });
 
 const { t } = useSiteI18n();
+const page = usePage();
 
 const pageTitle = computed(() => {
     const name = String(props.landing?.outlet_name || '').trim();
@@ -29,9 +31,13 @@ const topGallery = computed(() => galleryImages.value.slice(0, 2));
 const bottomGallery = computed(() => galleryImages.value.slice(2, 5));
 
 const bookNowHref = computed(() => {
-    const id = props.landing?.book_now_outlet_id;
-    if (!id) return '/reservation/arrange';
-    return `/reservation/arrange?outlet_id=${encodeURIComponent(String(id))}`;
+    const digits = normalizeWhatsAppNumber(String(page.props.reservationCallCenterWa || ''));
+    if (!digits) return null;
+
+    const outletName =
+        String(props.landing?.outlet_name || props.landing?.brand_name || 'Justus').trim() || 'Justus';
+    const prefill = t('outletLandingWhatsAppPrefill').replace('{outlet}', outletName);
+    return `https://wa.me/${digits}?text=${encodeURIComponent(prefill)}`;
 });
 
 /** Embed Google Maps — pakai API jika ada, fallback dari map_url / alamat outlet. */
@@ -131,7 +137,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
         :show-footer="false"
         shell-class="min-h-screen bg-black text-white"
     >
-        <main class="font-montserrat bg-black text-white">
+        <main class="font-montserrat bg-black text-center text-white">
             <div
                 v-if="landing.is_preview"
                 class="bg-amber-500 px-4 py-2 text-center text-xs font-semibold uppercase tracking-widest text-black"
@@ -161,7 +167,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
 
                 <div
                     v-if="introParagraphs.length"
-                    class="mt-5 space-y-4 text-left text-sm font-light leading-relaxed text-white/85 md:mt-6 md:text-center md:text-base"
+                    class="mt-5 space-y-4 text-sm font-light leading-relaxed text-white/85 md:mt-6 md:text-base"
                 >
                     <p v-for="(para, idx) in introParagraphs" :key="`intro-${idx}`">{{ para }}</p>
                 </div>
@@ -184,12 +190,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                 >
                     {{ landing.secondary_paragraph }}
                 </p>
-                <Link
+                <a
+                    v-if="bookNowHref"
                     :href="bookNowHref"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     class="mt-8 inline-block text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:text-amber-300 md:mt-10 md:text-base"
                 >
                     {{ landing.book_now_label || 'BOOK NOW' }}
-                </Link>
+                </a>
             </section>
 
             <!-- Gallery — mobile: full-bleed stack | desktop: 2 + 3 grid -->
