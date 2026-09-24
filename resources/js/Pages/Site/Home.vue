@@ -671,25 +671,31 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Tinggi frame seragam; gambar full (tidak dipotong) via object-contain */
 .promo-slide-frame {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
+    height: min(38svh, 260px);
     overflow: hidden;
     background: #0a0a0a;
-    aspect-ratio: 16 / 10;
 }
 
 .promo-slide-img {
     display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     object-position: center;
 }
 
 @media (min-width: 768px) {
     .promo-slide-frame {
-        aspect-ratio: 16 / 10;
+        height: min(32vh, 300px);
     }
 }
 
