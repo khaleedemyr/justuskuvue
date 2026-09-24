@@ -91,6 +91,31 @@ const mapExternalUrl = computed(() => {
     return null;
 });
 
+const googleReviews = computed(() => {
+    const data = props.landing?.google_reviews;
+    if (!data || typeof data !== 'object') return null;
+    const rating = Number(data.rating);
+    if (!Number.isFinite(rating) || rating <= 0) return null;
+    return {
+        placeId: String(data.place_id || ''),
+        rating,
+        userRatingCount: Number(data.user_rating_count) || 0,
+        reviews: Array.isArray(data.reviews) ? data.reviews.slice(0, 5) : [],
+        writeReviewUrl: String(data.write_review_url || '').trim() || null,
+    };
+});
+
+function formatRating(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '0.0';
+    return n.toFixed(1);
+}
+
+function starFillPercent(rating, starIndex) {
+    const filled = Math.min(Math.max(Number(rating) - (starIndex - 1), 0), 1);
+    return `${Math.round(filled * 100)}%`;
+}
+
 const lightboxImages = ref([]);
 const lightboxIndex = ref(0);
 const lightboxOpen = computed(() => lightboxImages.value.length > 0);
@@ -269,9 +294,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                 </div>
             </section>
 
-            <!-- Address + Map -->
+            <!-- Address + Map + Google Reviews -->
             <section
-                v-if="landing.address || mapEmbedUrl"
+                v-if="landing.address || mapEmbedUrl || googleReviews"
                 class="border-t border-white/10 px-4 py-10 md:px-6 md:py-16"
             >
                 <p
@@ -306,6 +331,116 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                         </svg>
                         {{ landing.see_map_label || 'Open in Google Maps' }}
                     </a>
+                </div>
+
+                <!-- Google Reviews -->
+                <div
+                    v-if="googleReviews"
+                    class="mx-auto mt-10 max-w-4xl border-t border-white/10 pt-10 text-left md:mt-12 md:pt-12"
+                >
+                    <div class="flex flex-col items-center gap-3 text-center">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/50">
+                            Google Reviews
+                        </p>
+                        <div class="flex flex-wrap items-center justify-center gap-3">
+                            <span class="text-4xl font-light tracking-tight text-white md:text-5xl">
+                                {{ formatRating(googleReviews.rating) }}
+                            </span>
+                            <div class="flex flex-col items-start gap-1">
+                                <div class="flex items-center gap-0.5" aria-hidden="true">
+                                    <span
+                                        v-for="star in 5"
+                                        :key="`hdr-star-${star}`"
+                                        class="relative inline-block h-5 w-5 text-white/20"
+                                    >
+                                        <svg class="absolute inset-0 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 2l2.9 6.9L22 10.3l-5 4.7 1.4 7L12 18.3 5.6 22l1.4-7-5-4.7 7.1-1.4L12 2z" />
+                                        </svg>
+                                        <span
+                                            class="absolute inset-0 overflow-hidden text-amber-400"
+                                            :style="{ width: starFillPercent(googleReviews.rating, star) }"
+                                        >
+                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2l2.9 6.9L22 10.3l-5 4.7 1.4 7L12 18.3 5.6 22l1.4-7-5-4.7 7.1-1.4L12 2z" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                </div>
+                                <p v-if="googleReviews.userRatingCount > 0" class="text-xs text-white/55">
+                                    {{ googleReviews.userRatingCount.toLocaleString() }} reviews
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul
+                        v-if="googleReviews.reviews.length"
+                        class="mt-8 space-y-4"
+                    >
+                        <li
+                            v-for="(review, idx) in googleReviews.reviews"
+                            :key="`review-${idx}`"
+                            class="rounded-lg border border-white/10 bg-white/[0.03] p-4 md:p-5"
+                        >
+                            <div class="flex items-start gap-3">
+                                <img
+                                    v-if="review.profile_photo"
+                                    :src="review.profile_photo"
+                                    :alt="review.author || 'Reviewer'"
+                                    class="h-10 w-10 shrink-0 rounded-full object-cover"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer"
+                                />
+                                <div
+                                    v-else
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white/70"
+                                    aria-hidden="true"
+                                >
+                                    {{ (review.author || '?').charAt(0).toUpperCase() }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <p class="truncate text-sm font-semibold text-white">
+                                            {{ review.author || 'Google user' }}
+                                        </p>
+                                        <p v-if="review.date" class="text-xs text-white/40">
+                                            {{ review.date }}
+                                        </p>
+                                    </div>
+                                    <div class="mt-1 flex items-center gap-0.5" aria-label="Rating">
+                                        <svg
+                                            v-for="star in 5"
+                                            :key="`rev-${idx}-star-${star}`"
+                                            class="h-3.5 w-3.5"
+                                            :class="Number(review.rating) >= star ? 'text-amber-400' : 'text-white/20'"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                            aria-hidden="true"
+                                        >
+                                            <path d="M12 2l2.9 6.9L22 10.3l-5 4.7 1.4 7L12 18.3 5.6 22l1.4-7-5-4.7 7.1-1.4L12 2z" />
+                                        </svg>
+                                    </div>
+                                    <p
+                                        v-if="review.text"
+                                        class="mt-2 text-sm font-light leading-relaxed text-white/75"
+                                    >
+                                        {{ review.text }}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div v-if="googleReviews.writeReviewUrl" class="mt-8 text-center">
+                        <a
+                            :href="googleReviews.writeReviewUrl"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            class="inline-flex items-center gap-2 rounded-full border border-amber-400/70 bg-amber-400/10 px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] text-amber-300 transition hover:border-amber-300 hover:bg-amber-400/20 hover:text-amber-200 md:text-sm"
+                        >
+                            Write a Review
+                        </a>
+                    </div>
                 </div>
             </section>
 
