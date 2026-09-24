@@ -419,20 +419,23 @@ onBeforeUnmount(() => {
                                     rel="noopener noreferrer"
                                     class="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80"
                                 >
+                                    <div class="promo-slide-frame">
+                                        <img
+                                            :src="slide.image"
+                                            :alt="slide.title || 'Promo'"
+                                            class="promo-slide-img"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </a>
+                                <div v-else class="promo-slide-frame">
                                     <img
                                         :src="slide.image"
                                         :alt="slide.title || 'Promo'"
-                                        class="block h-auto w-full max-h-[min(52svh,400px)] object-contain object-center sm:max-h-[min(48svh,460px)]"
+                                        class="promo-slide-img"
                                         loading="lazy"
                                     />
-                                </a>
-                                <img
-                                    v-else
-                                    :src="slide.image"
-                                    :alt="slide.title || 'Promo'"
-                                    class="block h-auto w-full max-h-[min(52svh,400px)] object-contain object-center sm:max-h-[min(48svh,460px)]"
-                                    loading="lazy"
-                                />
+                                </div>
                             </div>
                         </div>
                         <!-- Desktop: 1 halaman = 2 banner, geser per viewport (px) -->
@@ -450,7 +453,7 @@ onBeforeUnmount(() => {
                                 :style="{ width: `${promoViewportWidth}px` }"
                             >
                                 <div
-                                    class="grid w-full items-start gap-1.5"
+                                    class="grid w-full items-stretch gap-1.5"
                                     :class="page.length === 1 ? 'grid-cols-1' : 'grid-cols-2'"
                                 >
                                     <div
@@ -463,22 +466,25 @@ onBeforeUnmount(() => {
                                             :href="slide.link_url"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            class="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80"
+                                            class="block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80"
                                         >
+                                            <div class="promo-slide-frame">
+                                                <img
+                                                    :src="slide.image"
+                                                    :alt="slide.title || 'Promo'"
+                                                    class="promo-slide-img"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        </a>
+                                        <div v-else class="promo-slide-frame">
                                             <img
                                                 :src="slide.image"
                                                 :alt="slide.title || 'Promo'"
-                                                class="block h-auto w-full"
+                                                class="promo-slide-img"
                                                 loading="lazy"
                                             />
-                                        </a>
-                                        <img
-                                            v-else
-                                            :src="slide.image"
-                                            :alt="slide.title || 'Promo'"
-                                            class="block h-auto w-full"
-                                            loading="lazy"
-                                        />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -665,6 +671,28 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.promo-slide-frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #0a0a0a;
+    aspect-ratio: 16 / 10;
+}
+
+.promo-slide-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+@media (min-width: 768px) {
+    .promo-slide-frame {
+        aspect-ratio: 16 / 10;
+    }
+}
+
 .hero-copy {
     width: 100%;
 }
