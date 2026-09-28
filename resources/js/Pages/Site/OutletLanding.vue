@@ -19,9 +19,24 @@ const pageTitle = computed(() => {
     return name || 'Outlet';
 });
 
+const introHtml = computed(() => {
+    const html = String(props.landing?.intro_html || '').trim();
+    if (html) return html;
+    return '';
+});
+
+const introIsHtml = computed(() => /<[a-z][\s\S]*>/i.test(introHtml.value));
+
 const introParagraphs = computed(() =>
     Array.isArray(props.landing?.intro_paragraphs) ? props.landing.intro_paragraphs.filter(Boolean) : [],
 );
+
+const secondaryHtml = computed(() => {
+    const html = String(props.landing?.secondary_html || props.landing?.secondary_paragraph || '').trim();
+    return html;
+});
+
+const secondaryIsHtml = computed(() => /<[a-z][\s\S]*>/i.test(secondaryHtml.value));
 
 const galleryImages = computed(() =>
     Array.isArray(props.landing?.gallery_images) ? props.landing.gallery_images.filter(Boolean) : [],
@@ -191,10 +206,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                 </h1>
 
                 <div
-                    v-if="introParagraphs.length"
-                    class="mt-5 space-y-4 text-sm font-light leading-relaxed text-white/85 md:mt-6 md:text-base"
+                    v-if="introHtml || introParagraphs.length"
+                    class="outlet-landing-rich mt-5 space-y-4 text-sm font-light leading-relaxed text-white/85 md:mt-6 md:text-base"
                 >
-                    <p v-for="(para, idx) in introParagraphs" :key="`intro-${idx}`">{{ para }}</p>
+                    <div v-if="introIsHtml" class="outlet-landing-rich__content" v-html="introHtml" />
+                    <template v-else-if="introHtml">
+                        <p>{{ introHtml }}</p>
+                    </template>
+                    <template v-else>
+                        <p v-for="(para, idx) in introParagraphs" :key="`intro-${idx}`">{{ para }}</p>
+                    </template>
                 </div>
             </section>
 
@@ -209,12 +230,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
 
             <!-- Secondary + Book Now -->
             <section class="mx-auto max-w-3xl px-6 py-10 text-center md:py-16">
-                <p
-                    v-if="landing.secondary_paragraph"
-                    class="text-sm font-light leading-relaxed text-white/85 md:text-base"
+                <div
+                    v-if="secondaryHtml"
+                    class="outlet-landing-rich text-sm font-light leading-relaxed text-white/85 md:text-base"
                 >
-                    {{ landing.secondary_paragraph }}
-                </p>
+                    <div v-if="secondaryIsHtml" class="outlet-landing-rich__content" v-html="secondaryHtml" />
+                    <p v-else>{{ secondaryHtml }}</p>
+                </div>
                 <a
                     v-if="bookNowHref"
                     :href="bookNowHref"
@@ -503,3 +525,46 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
         </div>
     </SiteLayout>
 </template>
+
+<style scoped>
+.outlet-landing-rich__content :deep(p) {
+    margin: 0 0 1rem;
+}
+.outlet-landing-rich__content :deep(p:last-child) {
+    margin-bottom: 0;
+}
+.outlet-landing-rich__content :deep(strong),
+.outlet-landing-rich__content :deep(b) {
+    font-weight: 700;
+    color: #fff;
+}
+.outlet-landing-rich__content :deep(em),
+.outlet-landing-rich__content :deep(i) {
+    font-style: italic;
+}
+.outlet-landing-rich__content :deep(u) {
+    text-decoration: underline;
+}
+.outlet-landing-rich__content :deep(ul),
+.outlet-landing-rich__content :deep(ol) {
+    margin: 0.75rem auto 1rem;
+    display: inline-block;
+    text-align: left;
+    padding-left: 1.25rem;
+}
+.outlet-landing-rich__content :deep(li) {
+    margin: 0.2rem 0;
+}
+.outlet-landing-rich__content :deep([style*='text-align: left']),
+.outlet-landing-rich__content :deep([style*='text-align:left']) {
+    text-align: left;
+}
+.outlet-landing-rich__content :deep([style*='text-align: center']),
+.outlet-landing-rich__content :deep([style*='text-align:center']) {
+    text-align: center;
+}
+.outlet-landing-rich__content :deep([style*='text-align: right']),
+.outlet-landing-rich__content :deep([style*='text-align:right']) {
+    text-align: right;
+}
+</style>
