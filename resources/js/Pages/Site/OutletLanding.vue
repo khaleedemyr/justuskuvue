@@ -19,24 +19,62 @@ const pageTitle = computed(() => {
     return name || 'Outlet';
 });
 
+function looksLikeHtml(value) {
+    const s = String(value || '');
+    return /<[a-z][\s\S]*>/i.test(s) || /&lt;[a-z]/i.test(s);
+}
+
+/** Decode entity-encoded HTML once (e.g. &lt;p&gt; → <p>). */
+function normalizeRichHtml(raw) {
+    let s = String(raw || '').trim();
+    if (!s) return '';
+    if (/&lt;[a-z]/i.test(s) || /&amp;lt;/i.test(s)) {
+        if (typeof document !== 'undefined') {
+            const ta = document.createElement('textarea');
+            ta.innerHTML = s;
+            s = ta.value.trim();
+        } else {
+            s = s
+                .replace(/&lt;/gi, '<')
+                .replace(/&gt;/gi, '>')
+                .replace(/&quot;/gi, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/&amp;/gi, '&')
+                .trim();
+        }
+    }
+    return s;
+}
+
 const introHtml = computed(() => {
-    const html = String(props.landing?.intro_html || '').trim();
-    if (html) return html;
+    const fromApi = normalizeRichHtml(props.landing?.intro_html || '');
+    if (fromApi) return fromApi;
+
+    // ERP lama: intro_paragraphs bisa berisi string HTML utuh (belum di-split)
+    const paras = Array.isArray(props.landing?.intro_paragraphs)
+        ? props.landing.intro_paragraphs.filter(Boolean)
+        : [];
+    if (paras.some((p) => looksLikeHtml(p))) {
+        return paras.map((p) => normalizeRichHtml(p)).join('');
+    }
+
     return '';
 });
 
-const introIsHtml = computed(() => /<[a-z][\s\S]*>/i.test(introHtml.value));
+const introIsHtml = computed(() => looksLikeHtml(introHtml.value));
 
-const introParagraphs = computed(() =>
-    Array.isArray(props.landing?.intro_paragraphs) ? props.landing.intro_paragraphs.filter(Boolean) : [],
-);
-
-const secondaryHtml = computed(() => {
-    const html = String(props.landing?.secondary_html || props.landing?.secondary_paragraph || '').trim();
-    return html;
+const introParagraphs = computed(() => {
+    if (introIsHtml.value) return [];
+    return Array.isArray(props.landing?.intro_paragraphs)
+        ? props.landing.intro_paragraphs.filter(Boolean)
+        : [];
 });
 
-const secondaryIsHtml = computed(() => /<[a-z][\s\S]*>/i.test(secondaryHtml.value));
+const secondaryHtml = computed(() =>
+    normalizeRichHtml(props.landing?.secondary_html || props.landing?.secondary_paragraph || ''),
+);
+
+const secondaryIsHtml = computed(() => looksLikeHtml(secondaryHtml.value));
 
 const galleryImages = computed(() =>
     Array.isArray(props.landing?.gallery_images) ? props.landing.gallery_images.filter(Boolean) : [],
@@ -234,7 +272,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
                     v-if="secondaryHtml"
                     class="outlet-landing-rich text-sm font-light leading-relaxed text-white/85 md:text-base"
                 >
-                    <div v-if="secondaryIsHtml" class="outlet-landing-rich__content" v-html="secondaryHtml" />
+                    <div
+                        v-if="secondaryIsHtml"
+                        class="outlet-landing-rich__content"
+                        v-html="secondaryHtml"
+                    />
                     <p v-else>{{ secondaryHtml }}</p>
                 </div>
                 <a
