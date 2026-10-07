@@ -94,8 +94,12 @@ onMounted(() => {
                 </div>
             </section>
 
-            <img v-if="item.image" :src="item.image" class="mt-6 h-[360px] w-full rounded-xl object-cover" :alt="item.title" />
-            <div class="prose prose-invert mt-8 max-w-none whitespace-pre-wrap text-white/85" v-html="item.content || '-'"></div>
+            <img v-if="item.image" :src="item.image" class="mt-6 block h-auto max-h-[70vh] w-full rounded-xl object-contain" :alt="item.title" />
+            <div
+                class="prose prose-invert mt-8 max-w-none text-white/85"
+                :class="{ 'whitespace-pre-wrap': !item.content_html }"
+                v-html="item.content_html || item.content || '-'"
+            ></div>
         </article>
     </SiteLayout>
 </template>

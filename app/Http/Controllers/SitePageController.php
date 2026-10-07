@@ -579,6 +579,7 @@ class SitePageController extends Controller
                     'id' => (int) $item['id'],
                     'title' => (string) ($item['title'] ?? "What's On"),
                     'content' => (string) ($item['content'] ?? ''),
+                    'content_html' => (string) ($item['content_html'] ?? ''),
                     'image' => $item['image'] ?? null,
                     'published_at' => $item['published_at'] ?? null,
                     'category_name' => $categoryName,
