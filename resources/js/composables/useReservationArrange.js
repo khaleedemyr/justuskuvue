@@ -34,6 +34,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
     });
 
     const initialOutletId = String(options.initialOutletId || '').trim();
+    const guestTableSelectionEnabled = computed(() => options.guestTableSelectionEnabled !== false);
 
     const callCenterWa = computed(() =>
         normalizeWhatsAppNumber(String(page.props.reservationCallCenterWa || '')),
@@ -223,6 +224,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
     const maxSeatTotalForMultiTable = computed(() => Math.max(pax.value * 2, pax.value + 4));
 
     const isSelectionValid = computed(() => {
+        if (!guestTableSelectionEnabled.value) return true;
         if (selectedTableIds.value.length === 0 || selectedSeatTotal.value < pax.value) return false;
         if (selectedTableIds.value.length === 1) {
             return selectedSeatTotal.value >= pax.value;
@@ -280,24 +282,49 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
         }
     }
 
-    async function handleCheckAvailability() {
+    function explainCannotProceedFromStep2() {
+        if (!name.value.trim() || !phone.value.trim()) {
+            message.value = t('reservationFillContactFirst');
+        } else if (date.value && date.value < todayStr) {
+            message.value = t('reservationDatePast');
+        } else if (
+            date.value &&
+            time.value &&
+            !filterSlotsForDate(timeSlots.value, date.value).includes(time.value)
+        ) {
+            message.value =
+                date.value === todayStr
+                    ? t('reservationSameDayLeadTime')
+                    : t('reservationFillAvailabilityFirst');
+        } else {
+            message.value = t('reservationFillAvailabilityFirst');
+        }
+    }
+
+    async function handleAdvanceFromStep2WithoutTables() {
         if (!canCheckAvailability.value) {
-            if (!name.value.trim() || !phone.value.trim()) {
-                message.value = t('reservationFillContactFirst');
-            } else if (date.value && date.value < todayStr) {
-                message.value = t('reservationDatePast');
-            } else if (
-                date.value &&
-                time.value &&
-                !filterSlotsForDate(timeSlots.value, date.value).includes(time.value)
-            ) {
-                message.value =
-                    date.value === todayStr
-                        ? t('reservationSameDayLeadTime')
-                        : t('reservationFillAvailabilityFirst');
-            } else {
-                message.value = t('reservationFillAvailabilityFirst');
-            }
+            explainCannotProceedFromStep2();
+            return;
+        }
+        message.value = null;
+        submitError.value = null;
+        availabilityLayout.value = null;
+        activeSectionId.value = null;
+        selectedTableIds.value = [];
+        tableLayoutNotes.value = '';
+        checkedAvailability.value = true;
+        orderChannel.value = null;
+        wizardStep.value = 3;
+    }
+
+    async function handleCheckAvailability() {
+        if (!guestTableSelectionEnabled.value) {
+            await handleAdvanceFromStep2WithoutTables();
+            return;
+        }
+
+        if (!canCheckAvailability.value) {
+            explainCannotProceedFromStep2();
             return;
         }
 
@@ -338,7 +365,12 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
 
     async function submitReservationRequest() {
         if (!isSelectionValid.value || !outletId.value || !date.value || !time.value) {
-            return { ok: false, error: t('reservationTableSelectionRequired') };
+            return {
+                ok: false,
+                error: guestTableSelectionEnabled.value
+                    ? t('reservationTableSelectionRequired')
+                    : t('reservationFillAvailabilityFirst'),
+            };
         }
         if (!name.value.trim() || !phone.value.trim()) {
             return { ok: false, error: t('reservationFillContactFirst') };
@@ -355,7 +387,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
                 reservation_date: date.value,
                 reservation_time: time.value,
                 number_of_guests: pax.value,
-                selected_table_ids: selectedTableIds.value,
+                selected_table_ids: guestTableSelectionEnabled.value ? selectedTableIds.value : [],
                 smoking_preference: smokingType.value,
                 special_requests: combinedSpecialRequestsForSubmit.value,
                 from_sales: false,
@@ -612,7 +644,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
                 order_channel: 'self_order_web',
                 order_type: 'dine_in',
                 pax: pax.value,
-                table_ids: selectedTableIds.value,
+                table_ids: guestTableSelectionEnabled.value ? selectedTableIds.value : [],
                 notes: notes.value.trim() || null,
                 subtotal,
                 discount: 0,
@@ -841,9 +873,10 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
             submitError.value = t('reservationWaNotConfigured');
             return false;
         }
-        const selectedTableLabel =
-            selectedTables.value.map((table) => table.nama || `T-${table.source_table_id}`).join(' + ') ||
-            '-';
+        const selectedTableLabel = guestTableSelectionEnabled.value
+            ? selectedTables.value.map((table) => table.nama || `T-${table.source_table_id}`).join(' + ') ||
+              '-'
+            : t('reservationTableAssignedLater');
         const lines = [
             'Halo Call Center, saya ingin reservasi (Order Manual).',
             '',
@@ -858,7 +891,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
             `Meja: ${selectedTableLabel}`,
             `Area: ${smokingType.value === 'smoking' ? 'Smoking' : 'Non-Smoking'}`,
             notes.value.trim() ? `Special Request: ${notes.value}` : '',
-            tableLayoutNotes.value.trim()
+            guestTableSelectionEnabled.value && tableLayoutNotes.value.trim()
                 ? `${t('reservationTableNotesWaLine')}: ${tableLayoutNotes.value.trim()}`
                 : '',
             reservationNumber && String(reservationNumber).trim()
@@ -1021,7 +1054,12 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
         const base = [
             { id: 1, label: t('reservationChooseOutlet') },
             { id: 2, label: t('reservationWizardVisitDetails') },
-            { id: 3, label: t('reservationChooseTableTitle') },
+            {
+                id: 3,
+                label: guestTableSelectionEnabled.value
+                    ? t('reservationChooseTableTitle')
+                    : t('reservationOrderChannelStepTitle'),
+            },
         ];
         if (orderChannel.value === 'manual') {
             return [...base, { id: 4, label: t('reservationSummaryStep') }];
@@ -1037,11 +1075,14 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
         return [...base, { id: 4, label: t('reservationWizardStepPendingChannel') }];
     });
 
-    const tableNamesSummary = computed(() =>
-        selectedTables.value.length > 0
+    const tableNamesSummary = computed(() => {
+        if (!guestTableSelectionEnabled.value) {
+            return t('reservationTableAssignedLater');
+        }
+        return selectedTables.value.length > 0
             ? selectedTables.value.map((tbl) => tbl.nama || `T-${tbl.source_table_id}`).join(' + ')
-            : '—',
-    );
+            : '—';
+    });
 
     const smokingSummaryLabel = computed(() =>
         smokingType.value === 'smoking' ? t('reservationSmokingArea') : t('reservationNonSmokingArea'),
@@ -1211,6 +1252,7 @@ export function useReservationArrange(outletsSource, t, langRef, options = {}) {
         detailSelectedModifiers,
         dateStripRef,
         checkingAvailability,
+        guestTableSelectionEnabled,
         availabilityLayout,
         activeSectionId,
         selectedTableIds,

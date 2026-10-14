@@ -98,7 +98,8 @@ class ErpSiteProxyController extends Controller
             'reservation_date' => 'required|date_format:Y-m-d',
             'reservation_time' => 'required|date_format:H:i',
             'number_of_guests' => 'required|integer|min:1|max:40',
-            'selected_table_ids' => 'required|array|min:1',
+            // Optional when admin disables guest table selection; ERP enforces when enabled.
+            'selected_table_ids' => 'nullable|array',
             'selected_table_ids.*' => 'integer|min:1',
             'recaptcha_token' => 'required|string|max:4096',
             'form_started_at' => 'required|integer',

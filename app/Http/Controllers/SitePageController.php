@@ -408,10 +408,17 @@ class SitePageController extends Controller
             ->values()
             ->all();
 
+        $publicSettings = $this->erp->getFresh('reservations/public-settings');
+        $guestTableSelectionEnabled = filter_var(
+            $publicSettings['guest_table_selection_enabled'] ?? true,
+            FILTER_VALIDATE_BOOLEAN
+        );
+
         return Inertia::render('Site/ReservationArrange', [
             ...$nav,
             'outlets' => $outlets,
             'initialOutletId' => (string) ($request->query('outlet_id', '')),
+            'guestTableSelectionEnabled' => $guestTableSelectionEnabled,
         ]);
     }
 

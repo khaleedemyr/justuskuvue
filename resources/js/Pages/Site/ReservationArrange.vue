@@ -12,11 +12,13 @@ const props = defineProps({
     brandLogos: { type: Array, default: () => [] },
     outlets: { type: Array, default: () => [] },
     initialOutletId: { type: [String, Number], default: '' },
+    guestTableSelectionEnabled: { type: Boolean, default: true },
 });
 
 const { t, lang } = useSiteI18n();
 const form = useReservationArrange(toRef(props, 'outlets'), t, lang, {
     initialOutletId: props.initialOutletId,
+    guestTableSelectionEnabled: props.guestTableSelectionEnabled,
 });
 const page = usePage();
 const paymentQrisLoadFailed = ref(false);
@@ -601,16 +603,27 @@ function handleSuccessQrisError() {
                                             @click="form.handleCheckAvailability"
                                         >
                                             {{
-                                                form.checkingAvailability
-                                                    ? t('reservationCheckingAvailability')
-                                                    : t('reservationCheckAvailability')
+                                                form.guestTableSelectionEnabled
+                                                    ? form.checkingAvailability
+                                                        ? t('reservationCheckingAvailability')
+                                                        : t('reservationCheckAvailability')
+                                                    : t('reservationContinueWithoutTable')
                                             }}
                                         </button>
                                     </div>
                                 </div>
 
-                                <div v-if="form.wizardStep === 3 && form.availabilityLayout" class="space-y-6">
-                                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                <div
+                                    v-if="
+                                        form.wizardStep === 3 &&
+                                        (!form.guestTableSelectionEnabled || form.availabilityLayout)
+                                    "
+                                    class="space-y-6"
+                                >
+                                    <div
+                                        v-if="form.guestTableSelectionEnabled"
+                                        class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                                    >
                                         <h3 class="font-montserrat text-lg font-medium text-white md:text-xl">
                                             {{ t('reservationChooseTableTitle') }}
                                         </h3>
@@ -632,6 +645,7 @@ function handleSuccessQrisError() {
                                             }})
                                         </span>
                                     </div>
+                                    <template v-if="form.guestTableSelectionEnabled">
                                     <div class="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">
                                         <span class="rounded-lg border border-amber-400/25 bg-amber-500/10 px-2 py-1 text-amber-200/90">
                                             {{ t('reservationLegendSmoking') }}
@@ -788,7 +802,11 @@ function handleSuccessQrisError() {
                                             :placeholder="t('reservationTableNotesPlaceholder')"
                                         />
                                     </label>
-                                    <div class="space-y-6 border-t border-white/10 pt-8">
+                                    </template>
+                                    <div
+                                        class="space-y-6"
+                                        :class="form.guestTableSelectionEnabled ? 'border-t border-white/10 pt-8' : ''"
+                                    >
                                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                             <button
                                                 type="button"
@@ -798,6 +816,7 @@ function handleSuccessQrisError() {
                                                 {{ t('reservationBack') }}
                                             </button>
                                             <button
+                                                v-if="form.guestTableSelectionEnabled"
                                                 type="button"
                                                 class="text-xs font-semibold uppercase tracking-widest text-amber-400/90 underline-offset-4 hover:underline"
                                                 @click="form.resetAvailabilityState()"
@@ -813,7 +832,11 @@ function handleSuccessQrisError() {
                                                     {{ t('reservationFinalizeSectionTitle') }}
                                                 </p>
                                                 <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/55">
-                                                    {{ t('reservationFinalizeSectionLead') }}
+                                                    {{
+                                                        form.guestTableSelectionEnabled
+                                                            ? t('reservationFinalizeSectionLead')
+                                                            : t('reservationFinalizeSectionLeadNoTable')
+                                                    }}
                                                 </p>
                                             </div>
                                             <div>
@@ -924,7 +947,11 @@ function handleSuccessQrisError() {
                                 </div>
 
                                 <div
-                                    v-if="form.wizardStep === 3 && !form.availabilityLayout"
+                                    v-if="
+                                        form.wizardStep === 3 &&
+                                        form.guestTableSelectionEnabled &&
+                                        !form.availabilityLayout
+                                    "
                                     class="py-12 text-center text-white/50"
                                 >
                                     <p class="text-sm">{{ t('reservationFillAvailabilityFirst') }}</p>
