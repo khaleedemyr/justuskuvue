@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ReservationSiteSettings;
 use App\Services\YmsoftErpClient;
 use App\Support\SiteMediaUrl;
 use Illuminate\Http\JsonResponse;
@@ -14,8 +15,10 @@ use Throwable;
 
 class SitePageController extends Controller
 {
-    public function __construct(private readonly YmsoftErpClient $erp)
-    {
+    public function __construct(
+        private readonly YmsoftErpClient $erp,
+        private readonly ReservationSiteSettings $reservationSettings,
+    ) {
     }
 
     public function home(): Response
@@ -408,17 +411,11 @@ class SitePageController extends Controller
             ->values()
             ->all();
 
-        $publicSettings = $this->erp->getFresh('reservations/public-settings');
-        $guestTableSelectionEnabled = filter_var(
-            $publicSettings['guest_table_selection_enabled'] ?? true,
-            FILTER_VALIDATE_BOOLEAN
-        );
-
         return Inertia::render('Site/ReservationArrange', [
             ...$nav,
             'outlets' => $outlets,
             'initialOutletId' => (string) ($request->query('outlet_id', '')),
-            'guestTableSelectionEnabled' => $guestTableSelectionEnabled,
+            'guestTableSelectionEnabled' => $this->reservationSettings->isGuestTableSelectionEnabled(true),
         ]);
     }
 
@@ -506,7 +503,8 @@ class SitePageController extends Controller
 
     private function isReservationMaintenanceEnabled(): bool
     {
-        return (bool) config('services.ymsofterp.reservation_maintenance_enabled', false);
+        // Fresh so Web Profile toggle applies immediately on page visit.
+        return $this->reservationSettings->isMaintenanceEnabled(true);
     }
 
     private function reservationMaintenanceResponse(): Response

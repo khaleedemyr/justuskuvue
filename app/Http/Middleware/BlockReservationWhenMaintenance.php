@@ -2,15 +2,20 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\ReservationSiteSettings;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class BlockReservationWhenMaintenance
 {
+    public function __construct(private readonly ReservationSiteSettings $reservationSettings)
+    {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('services.ymsofterp.reservation_maintenance_enabled', false)) {
+        if (! $this->reservationSettings->isMaintenanceEnabled()) {
             return $next($request);
         }
 
