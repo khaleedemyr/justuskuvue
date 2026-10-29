@@ -73,4 +73,12 @@ return [
         'medium_risk_score' => (float) env('RECAPTCHA_MEDIUM_RISK_SCORE', 0.7),
     ],
 
+    /*
+    | Google Tag Manager container ID (GTM-XXXXXXX).
+    | Configure GA4 / Ads tags inside the GTM container dashboard.
+    */
+    'google_tag_manager' => [
+        'container_id' => env('GOOGLE_TAG_MANAGER_ID', ''),
+    ],
+
 ];

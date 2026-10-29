@@ -5,6 +5,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import { initInertiaGaTracking } from './lib/googleAnalytics';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Justus Group';
 const LOADER_ID = 'global-page-loader';
@@ -49,6 +50,7 @@ if (typeof document !== 'undefined') {
     document.addEventListener('inertia:finish', hideGlobalLoader);
     document.addEventListener('inertia:error', hideGlobalLoader);
     document.addEventListener('inertia:invalid', hideGlobalLoader);
+    initInertiaGaTracking();
 }
 
 createInertiaApp({
